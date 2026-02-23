@@ -1,0 +1,9 @@
+node_modules
+.next
+data
+.env
+.env.local
+.git
+README.md
+PROJECT_MEMORY.md
+docs
