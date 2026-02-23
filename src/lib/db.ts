@@ -103,3 +103,31 @@ export function getDb(): Database.Database {
   }
   return _db;
 }
+
+// ─── Player queries ───────────────────────────────────────────────────────────
+
+export function createPlayer(db: Database.Database, name: string): Player {
+  return db
+    .prepare('INSERT INTO players (name) VALUES (?) RETURNING *')
+    .get(name) as Player;
+}
+
+export function getAllPlayers(db: Database.Database): Player[] {
+  return db.prepare('SELECT * FROM players ORDER BY name ASC').all() as Player[];
+}
+
+export function getPlayerById(db: Database.Database, id: number): Player | null {
+  return (
+    (db.prepare('SELECT * FROM players WHERE id = ?').get(id) as Player) ?? null
+  );
+}
+
+export function deletePlayer(db: Database.Database, id: number): void {
+  const { count } = db
+    .prepare('SELECT COUNT(*) as count FROM shots WHERE player_id = ?')
+    .get(id) as { count: number };
+  if (count > 0) {
+    throw new Error('Player has shot history and cannot be deleted.');
+  }
+  db.prepare('DELETE FROM players WHERE id = ?').run(id);
+}

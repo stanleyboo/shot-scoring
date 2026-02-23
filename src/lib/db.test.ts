@@ -45,3 +45,56 @@ describe('schema', () => {
     }).toThrow();
   });
 });
+
+describe('player queries', () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = new Database(':memory:');
+    db.pragma('foreign_keys = ON');
+    applySchema(db);
+  });
+
+  afterEach(() => db.close());
+
+  it('createPlayer inserts and returns a player', () => {
+    const player = createPlayer(db, 'Alice');
+    expect(player.id).toBeGreaterThan(0);
+    expect(player.name).toBe('Alice');
+  });
+
+  it('createPlayer throws on duplicate name', () => {
+    createPlayer(db, 'Alice');
+    expect(() => createPlayer(db, 'Alice')).toThrow();
+  });
+
+  it('getAllPlayers returns players ordered by name', () => {
+    createPlayer(db, 'Zara');
+    createPlayer(db, 'Alice');
+    const players = getAllPlayers(db);
+    expect(players).toHaveLength(2);
+    expect(players[0].name).toBe('Alice');
+    expect(players[1].name).toBe('Zara');
+  });
+
+  it('getPlayerById returns null for unknown id', () => {
+    expect(getPlayerById(db, 999)).toBeNull();
+  });
+
+  it('deletePlayer removes player with no shots', () => {
+    const player = createPlayer(db, 'Alice');
+    deletePlayer(db, player.id);
+    expect(getAllPlayers(db)).toHaveLength(0);
+  });
+
+  it('deletePlayer throws if player has shots', () => {
+    const player = createPlayer(db, 'Alice');
+    const session = db
+      .prepare('INSERT INTO sessions (name) VALUES (?) RETURNING *')
+      .get('Test') as { id: number };
+    db.prepare(
+      'INSERT INTO shots (session_id, player_id, scored) VALUES (?, ?, 1)'
+    ).run(session.id, player.id);
+    expect(() => deletePlayer(db, player.id)).toThrow(/has shot history/);
+  });
+});
