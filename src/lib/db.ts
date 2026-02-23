@@ -123,10 +123,13 @@ export function getPlayerById(db: Database.Database, id: number): Player | null 
 }
 
 export function deletePlayer(db: Database.Database, id: number): void {
-  const { count } = db
-    .prepare('SELECT COUNT(*) as count FROM shots WHERE player_id = ?')
-    .get(id) as { count: number };
-  if (count > 0) {
+  const { shotCount } = db
+    .prepare('SELECT COUNT(*) as shotCount FROM shots WHERE player_id = ?')
+    .get(id) as { shotCount: number };
+  const { sessionCount } = db
+    .prepare('SELECT COUNT(*) as sessionCount FROM session_players WHERE player_id = ?')
+    .get(id) as { sessionCount: number };
+  if (shotCount > 0 || sessionCount > 0) {
     throw new Error('Player has shot history and cannot be deleted.');
   }
   db.prepare('DELETE FROM players WHERE id = ?').run(id);
@@ -154,16 +157,17 @@ export function createSession(
 }
 
 export function endSession(db: Database.Database, sessionId: number): void {
-  db.prepare(
-    "UPDATE sessions SET ended_at = datetime('now') WHERE id = ?"
-  ).run(sessionId);
+  const result = db
+    .prepare("UPDATE sessions SET ended_at = datetime('now') WHERE id = ?")
+    .run(sessionId);
+  if (result.changes === 0) throw new Error(`Session ${sessionId} not found`);
 }
 
 export function getActiveSession(db: Database.Database): Session | null {
   return (
     (db
       .prepare(
-        'SELECT * FROM sessions WHERE ended_at IS NULL ORDER BY started_at DESC LIMIT 1'
+        'SELECT * FROM sessions WHERE ended_at IS NULL ORDER BY started_at DESC, id DESC LIMIT 1'
       )
       .get() as Session) ?? null
   );
