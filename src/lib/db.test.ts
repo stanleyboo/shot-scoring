@@ -172,3 +172,59 @@ describe('session queries', () => {
     expect(bob.attempted).toBe(1);
   });
 });
+
+describe('shot queries', () => {
+  let db: Database.Database;
+  let player: Player;
+  let sessionId: number;
+
+  beforeEach(() => {
+    db = new Database(':memory:');
+    db.pragma('foreign_keys = ON');
+    applySchema(db);
+    player = createPlayer(db, 'Alice');
+    sessionId = createSession(db, 'Test', [player.id]).id;
+  });
+
+  afterEach(() => db.close());
+
+  it('recordShot inserts a scored shot', () => {
+    const shot = recordShot(db, sessionId, player.id, true);
+    expect(shot.scored).toBe(1);
+    expect(shot.player_id).toBe(player.id);
+  });
+
+  it('recordShot inserts a missed shot', () => {
+    const shot = recordShot(db, sessionId, player.id, false);
+    expect(shot.scored).toBe(0);
+  });
+
+  it('undoLastShot removes the last shot', () => {
+    recordShot(db, sessionId, player.id, true);
+    recordShot(db, sessionId, player.id, false);
+    undoLastShot(db, sessionId, player.id);
+    const stats = getSessionWithStats(db, sessionId)!.players.find(
+      p => p.player_id === player.id
+    )!;
+    expect(stats.attempted).toBe(1);
+  });
+
+  it('undoLastShot is a no-op when no shots exist', () => {
+    expect(() => undoLastShot(db, sessionId, player.id)).not.toThrow();
+  });
+
+  it('getPlayerCareerStats aggregates across sessions', () => {
+    const player2 = createPlayer(db, 'Bob');
+    const s2Id = createSession(db, 'Session 2', [player.id]).id;
+    recordShot(db, sessionId, player.id, true);
+    recordShot(db, sessionId, player.id, true);
+    recordShot(db, sessionId, player.id, false);
+    recordShot(db, s2Id, player.id, true);
+
+    const stats = getPlayerCareerStats(db, player.id);
+    expect(stats.total_made).toBe(3);
+    expect(stats.total_attempted).toBe(4);
+    expect(stats.sessions_played).toBe(2);
+    expect(stats.sessions).toHaveLength(2);
+  });
+});

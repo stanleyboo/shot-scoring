@@ -213,3 +213,82 @@ export function getSessionWithStats(
 
   return { session, players };
 }
+
+// ─── Shot queries ─────────────────────────────────────────────────────────────
+
+export function recordShot(
+  db: Database.Database,
+  sessionId: number,
+  playerId: number,
+  scored: boolean
+): Shot {
+  return db
+    .prepare(
+      'INSERT INTO shots (session_id, player_id, scored) VALUES (?, ?, ?) RETURNING *'
+    )
+    .get(sessionId, playerId, scored ? 1 : 0) as Shot;
+}
+
+export function undoLastShot(
+  db: Database.Database,
+  sessionId: number,
+  playerId: number
+): void {
+  const last = db
+    .prepare(
+      `SELECT id FROM shots
+       WHERE session_id = ? AND player_id = ?
+       ORDER BY created_at DESC, id DESC LIMIT 1`
+    )
+    .get(sessionId, playerId) as { id: number } | undefined;
+  if (last) {
+    db.prepare('DELETE FROM shots WHERE id = ?').run(last.id);
+  }
+}
+
+export function getPlayerCareerStats(
+  db: Database.Database,
+  playerId: number
+): PlayerCareerStats {
+  const player = getPlayerById(db, playerId);
+  if (!player) throw new Error(`Player ${playerId} not found`);
+
+  const agg = db
+    .prepare(
+      `SELECT
+         COUNT(DISTINCT sh.session_id)                                    AS sessions_played,
+         COALESCE(SUM(CASE WHEN sh.scored = 1 THEN 1 ELSE 0 END), 0)     AS total_made,
+         COALESCE(COUNT(sh.id), 0)                                        AS total_attempted
+       FROM shots sh
+       WHERE sh.player_id = ?`
+    )
+    .get(playerId) as {
+    sessions_played: number;
+    total_made: number;
+    total_attempted: number;
+  };
+
+  const sessions = db
+    .prepare(
+      `SELECT
+         s.id   AS session_id,
+         s.name AS session_name,
+         s.started_at,
+         COALESCE(SUM(CASE WHEN sh.scored = 1 THEN 1 ELSE 0 END), 0) AS made,
+         COALESCE(COUNT(sh.id), 0)                                    AS attempted
+       FROM session_players sp
+       JOIN sessions s ON s.id = sp.session_id
+       LEFT JOIN shots sh ON sh.session_id = s.id AND sh.player_id = ?
+       WHERE sp.player_id = ?
+       GROUP BY s.id
+       ORDER BY s.started_at DESC`
+    )
+    .all(playerId, playerId) as PlayerCareerStats['sessions'];
+
+  return {
+    player_id: playerId,
+    name: player.name,
+    ...agg,
+    sessions,
+  };
+}
