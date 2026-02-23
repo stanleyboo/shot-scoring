@@ -98,3 +98,77 @@ describe('player queries', () => {
     expect(() => deletePlayer(db, player.id)).toThrow(/has shot history/);
   });
 });
+
+describe('session queries', () => {
+  let db: Database.Database;
+  let player1: Player;
+  let player2: Player;
+
+  beforeEach(() => {
+    db = new Database(':memory:');
+    db.pragma('foreign_keys = ON');
+    applySchema(db);
+    player1 = createPlayer(db, 'Alice');
+    player2 = createPlayer(db, 'Bob');
+  });
+
+  afterEach(() => db.close());
+
+  it('createSession creates a session with players', () => {
+    const session = createSession(db, 'Morning Training', [player1.id, player2.id]);
+    expect(session.id).toBeGreaterThan(0);
+    expect(session.name).toBe('Morning Training');
+    expect(session.ended_at).toBeNull();
+  });
+
+  it('getActiveSession returns null when no active sessions', () => {
+    expect(getActiveSession(db)).toBeNull();
+  });
+
+  it('getActiveSession returns the open session', () => {
+    createSession(db, 'Test', [player1.id]);
+    const active = getActiveSession(db);
+    expect(active).not.toBeNull();
+    expect(active!.name).toBe('Test');
+  });
+
+  it('endSession sets ended_at', () => {
+    const session = createSession(db, 'Test', [player1.id]);
+    endSession(db, session.id);
+    expect(getActiveSession(db)).toBeNull();
+    const all = getAllSessions(db);
+    expect(all[0].ended_at).not.toBeNull();
+  });
+
+  it('getAllSessions returns sessions newest first', () => {
+    createSession(db, 'First', [player1.id]);
+    const s2 = createSession(db, 'Second', [player1.id]);
+    endSession(db, s2.id);
+    const sessions = getAllSessions(db);
+    expect(sessions[0].name).toBe('Second');
+    expect(sessions[1].name).toBe('First');
+  });
+
+  it('getSessionWithStats returns per-player shot counts', () => {
+    const session = createSession(db, 'Test', [player1.id, player2.id]);
+    db.prepare(
+      'INSERT INTO shots (session_id, player_id, scored) VALUES (?, ?, ?)'
+    ).run(session.id, player1.id, 1);
+    db.prepare(
+      'INSERT INTO shots (session_id, player_id, scored) VALUES (?, ?, ?)'
+    ).run(session.id, player1.id, 0);
+    db.prepare(
+      'INSERT INTO shots (session_id, player_id, scored) VALUES (?, ?, ?)'
+    ).run(session.id, player2.id, 1);
+
+    const stats = getSessionWithStats(db, session.id);
+    expect(stats).not.toBeNull();
+    expect(stats!.players).toHaveLength(2);
+    const alice = stats!.players.find(p => p.player_id === player1.id)!;
+    expect(alice.made).toBe(1);
+    expect(alice.attempted).toBe(2);
+    const bob = stats!.players.find(p => p.player_id === player2.id)!;
+    expect(bob.made).toBe(1);
+    expect(bob.attempted).toBe(1);
+  });
+});

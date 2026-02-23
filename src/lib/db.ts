@@ -131,3 +131,85 @@ export function deletePlayer(db: Database.Database, id: number): void {
   }
   db.prepare('DELETE FROM players WHERE id = ?').run(id);
 }
+
+// ─── Session queries ──────────────────────────────────────────────────────────
+
+export function createSession(
+  db: Database.Database,
+  name: string | null,
+  playerIds: number[]
+): Session {
+  const insertSession = db.prepare(
+    'INSERT INTO sessions (name) VALUES (?) RETURNING *'
+  );
+  const insertPlayer = db.prepare(
+    'INSERT INTO session_players (session_id, player_id) VALUES (?, ?)'
+  );
+  const run = db.transaction((name: string | null, ids: number[]) => {
+    const session = insertSession.get(name) as Session;
+    for (const pid of ids) insertPlayer.run(session.id, pid);
+    return session;
+  });
+  return run(name, playerIds);
+}
+
+export function endSession(db: Database.Database, sessionId: number): void {
+  db.prepare(
+    "UPDATE sessions SET ended_at = datetime('now') WHERE id = ?"
+  ).run(sessionId);
+}
+
+export function getActiveSession(db: Database.Database): Session | null {
+  return (
+    (db
+      .prepare(
+        'SELECT * FROM sessions WHERE ended_at IS NULL ORDER BY started_at DESC LIMIT 1'
+      )
+      .get() as Session) ?? null
+  );
+}
+
+export function getAllSessions(
+  db: Database.Database
+): (Session & { player_count: number; total_shots: number })[] {
+  return db
+    .prepare(
+      `SELECT s.*,
+         COUNT(DISTINCT sp.player_id) AS player_count,
+         COUNT(sh.id)                 AS total_shots
+       FROM sessions s
+       LEFT JOIN session_players sp ON sp.session_id = s.id
+       LEFT JOIN shots sh            ON sh.session_id = s.id
+       GROUP BY s.id
+       ORDER BY s.started_at DESC, s.id DESC`
+    )
+    .all() as (Session & { player_count: number; total_shots: number })[];
+}
+
+export function getSessionWithStats(
+  db: Database.Database,
+  sessionId: number
+): SessionWithStats | null {
+  const session = db
+    .prepare('SELECT * FROM sessions WHERE id = ?')
+    .get(sessionId) as Session | undefined;
+  if (!session) return null;
+
+  const players = db
+    .prepare(
+      `SELECT
+         p.id AS player_id,
+         p.name,
+         COALESCE(SUM(CASE WHEN sh.scored = 1 THEN 1 ELSE 0 END), 0) AS made,
+         COALESCE(COUNT(sh.id), 0)                                    AS attempted
+       FROM session_players sp
+       JOIN players p ON p.id = sp.player_id
+       LEFT JOIN shots sh ON sh.player_id = p.id AND sh.session_id = ?
+       WHERE sp.session_id = ?
+       GROUP BY p.id
+       ORDER BY p.name ASC`
+    )
+    .all(sessionId, sessionId) as SessionWithStats['players'];
+
+  return { session, players };
+}
