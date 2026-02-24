@@ -123,16 +123,20 @@ export function getPlayerById(db: Database.Database, id: number): Player | null 
 }
 
 export function deletePlayer(db: Database.Database, id: number): void {
-  const { shotCount } = db
-    .prepare('SELECT COUNT(*) as shotCount FROM shots WHERE player_id = ?')
-    .get(id) as { shotCount: number };
-  const { sessionCount } = db
-    .prepare('SELECT COUNT(*) as sessionCount FROM session_players WHERE player_id = ?')
-    .get(id) as { sessionCount: number };
-  if (shotCount > 0 || sessionCount > 0) {
-    throw new Error('Player has shot history and cannot be deleted.');
-  }
-  db.prepare('DELETE FROM players WHERE id = ?').run(id);
+  const run = db.transaction(() => {
+    db.prepare('DELETE FROM shots WHERE player_id = ?').run(id);
+    db.prepare('DELETE FROM session_players WHERE player_id = ?').run(id);
+    const result = db.prepare('DELETE FROM players WHERE id = ?').run(id);
+    if (result.changes === 0) throw new Error(`Player ${id} not found`);
+  });
+  run();
+}
+
+export function renamePlayer(db: Database.Database, id: number, name: string): void {
+  const trimmed = name.trim();
+  if (!trimmed) throw new Error('Player name cannot be empty');
+  const result = db.prepare('UPDATE players SET name = ? WHERE id = ?').run(trimmed, id);
+  if (result.changes === 0) throw new Error(`Player ${id} not found`);
 }
 
 // ─── Session queries ──────────────────────────────────────────────────────────
@@ -216,6 +220,23 @@ export function getSessionWithStats(
     .all(sessionId, sessionId) as SessionWithStats['players'];
 
   return { session, players };
+}
+
+export function deleteSession(db: Database.Database, sessionId: number): void {
+  // ON DELETE CASCADE handles shots and session_players automatically
+  const result = db.prepare('DELETE FROM sessions WHERE id = ?').run(sessionId);
+  if (result.changes === 0) throw new Error(`Session ${sessionId} not found`);
+}
+
+export function renameSession(
+  db: Database.Database,
+  sessionId: number,
+  name: string | null
+): void {
+  const result = db
+    .prepare('UPDATE sessions SET name = ? WHERE id = ?')
+    .run(name, sessionId);
+  if (result.changes === 0) throw new Error(`Session ${sessionId} not found`);
 }
 
 // ─── Shot queries ─────────────────────────────────────────────────────────────

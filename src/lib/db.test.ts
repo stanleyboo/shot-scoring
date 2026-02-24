@@ -5,11 +5,14 @@ import {
   getAllPlayers,
   getPlayerById,
   deletePlayer,
+  renamePlayer,
   createSession,
   endSession,
   getActiveSession,
   getAllSessions,
   getSessionWithStats,
+  deleteSession,
+  renameSession,
   recordShot,
   undoLastShot,
   getPlayerCareerStats,
@@ -87,15 +90,25 @@ describe('player queries', () => {
     expect(getAllPlayers(db)).toHaveLength(0);
   });
 
-  it('deletePlayer throws if player has shots', () => {
+  it('deletePlayer cascades shots and session_players', () => {
     const player = createPlayer(db, 'Alice');
-    const session = db
-      .prepare('INSERT INTO sessions (name) VALUES (?) RETURNING *')
-      .get('Test') as { id: number };
-    db.prepare(
-      'INSERT INTO shots (session_id, player_id, scored) VALUES (?, ?, 1)'
-    ).run(session.id, player.id);
-    expect(() => deletePlayer(db, player.id)).toThrow(/has shot history/);
+    const session = createSession(db, 'Test', [player.id]);
+    recordShot(db, session.id, player.id, true);
+    deletePlayer(db, player.id);
+    expect(getAllPlayers(db)).toHaveLength(0);
+    const shots = db.prepare('SELECT * FROM shots WHERE player_id = ?').all(player.id);
+    expect(shots).toHaveLength(0);
+  });
+
+  it('renamePlayer updates the player name', () => {
+    const player = createPlayer(db, 'Alice');
+    renamePlayer(db, player.id, '  Alicia  ');
+    expect(getPlayerById(db, player.id)!.name).toBe('Alicia');
+  });
+
+  it('renamePlayer throws for empty name', () => {
+    const player = createPlayer(db, 'Alice');
+    expect(() => renamePlayer(db, player.id, '  ')).toThrow(/cannot be empty/);
   });
 });
 
@@ -147,6 +160,28 @@ describe('session queries', () => {
     const sessions = getAllSessions(db);
     expect(sessions[0].name).toBe('Second');
     expect(sessions[1].name).toBe('First');
+  });
+
+  it('deleteSession removes the session and cascades shots', () => {
+    const session = createSession(db, 'Test', [player1.id]);
+    recordShot(db, session.id, player1.id, true);
+    deleteSession(db, session.id);
+    expect(getAllSessions(db)).toHaveLength(0);
+    const shots = db.prepare('SELECT * FROM shots WHERE session_id = ?').all(session.id);
+    expect(shots).toHaveLength(0);
+  });
+
+  it('renameSession updates the session name', () => {
+    const session = createSession(db, 'Old Name', [player1.id]);
+    renameSession(db, session.id, 'New Name');
+    const updated = getAllSessions(db)[0];
+    expect(updated.name).toBe('New Name');
+  });
+
+  it('renameSession clears the name when null passed', () => {
+    const session = createSession(db, 'Named', [player1.id]);
+    renameSession(db, session.id, null);
+    expect(getAllSessions(db)[0].name).toBeNull();
   });
 
   it('getSessionWithStats returns per-player shot counts', () => {

@@ -5,6 +5,8 @@ import {
   getDb,
   createSession as dbCreate,
   endSession as dbEnd,
+  deleteSession as dbDelete,
+  renameSession as dbRename,
 } from '@/lib/db';
 
 export async function createSession(name: string, playerIds: number[]) {
@@ -20,4 +22,16 @@ export async function endSession(sessionId: number) {
   revalidatePath('/');
   revalidatePath('/sessions');
   revalidatePath(`/sessions/${sessionId}`);
+}
+
+export async function deleteSession(sessionId: number) {
+  dbDelete(getDb(), sessionId);
+  revalidatePath('/');
+  revalidatePath('/sessions');
+}
+
+export async function renameSession(sessionId: number, name: string) {
+  dbRename(getDb(), sessionId, name.trim() || null);
+  revalidatePath(`/sessions/${sessionId}/summary`);
+  revalidatePath('/sessions');
 }

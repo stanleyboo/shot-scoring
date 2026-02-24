@@ -1,6 +1,8 @@
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getDb, getSessionWithStats } from '@/lib/db';
+import RenameSessionForm from '@/components/RenameSessionForm';
+import DeleteSessionButton from '@/components/DeleteSessionButton';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -36,23 +38,24 @@ export default async function SessionSummaryPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Link href="/sessions" className="text-slate-500 hover:text-slate-300 transition-colors">
-          ←
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-100">
-            {session.name ?? 'Session Summary'}
-          </h1>
-          <p className="text-sm text-slate-500">
-            {new Date(session.started_at).toLocaleDateString('en-GB', {
-              weekday: 'long',
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-            })}
-          </p>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <Link href="/sessions" className="mt-1.5 text-slate-500 hover:text-slate-300 transition-colors">
+            ←
+          </Link>
+          <div>
+            <RenameSessionForm sessionId={sessionId} currentName={session.name} />
+            <p className="text-sm text-slate-500 mt-0.5">
+              {new Date(session.started_at).toLocaleDateString('en-GB', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+              })}
+            </p>
+          </div>
         </div>
+        <DeleteSessionButton sessionId={sessionId} redirectTo="/sessions" />
       </div>
 
       <div className="rounded-2xl border border-slate-700 overflow-hidden">

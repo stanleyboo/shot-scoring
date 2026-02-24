@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getDb, getAllSessions } from '@/lib/db';
+import DeleteSessionButton from '@/components/DeleteSessionButton';
 
 export default function SessionsPage() {
   const sessions = getAllSessions(getDb());
@@ -30,11 +31,11 @@ export default function SessionsPage() {
               ? `/sessions/${session.id}/summary`
               : `/sessions/${session.id}`;
             return (
-              <li key={session.id}>
-                <Link
-                  href={href}
-                  className="flex items-center justify-between rounded-2xl border border-slate-700 bg-slate-800/30 px-4 py-4 hover:bg-slate-800/60 transition-colors"
-                >
+              <li
+                key={session.id}
+                className="flex items-center gap-1 rounded-2xl border border-slate-700 bg-slate-800/30 hover:bg-slate-800/60 transition-colors"
+              >
+                <Link href={href} className="flex flex-1 items-center justify-between px-4 py-4">
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-slate-100">
@@ -60,6 +61,9 @@ export default function SessionsPage() {
                     <p className="text-xs text-slate-500">{session.player_count} players</p>
                   </div>
                 </Link>
+                <div className="pr-2">
+                  <DeleteSessionButton sessionId={session.id} />
+                </div>
               </li>
             );
           })}
