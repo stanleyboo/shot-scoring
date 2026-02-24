@@ -1,4 +1,6 @@
 import { getDb } from '@/lib/db';
+
+export const dynamic = 'force-dynamic';
 import AddPlayerForm from '@/components/AddPlayerForm';
 import PlayerList from '@/components/PlayerList';
 

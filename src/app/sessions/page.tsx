@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { getDb, getAllSessions } from '@/lib/db';
 import DeleteSessionButton from '@/components/DeleteSessionButton';
 
+export const dynamic = 'force-dynamic';
+
 export default function SessionsPage() {
   const sessions = getAllSessions(getDb());
 
