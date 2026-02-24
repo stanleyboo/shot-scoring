@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getDb, getSessionWithStats } from '@/lib/db';
 
@@ -26,6 +26,9 @@ export default async function SessionSummaryPage({ params }: Props) {
 
   const data = getSessionWithStats(getDb(), sessionId);
   if (!data) notFound();
+
+  // Session still live — go to the scoring board
+  if (!data.session.ended_at) redirect(`/sessions/${sessionId}`);
 
   const { session, players } = data;
   const totalMade = players.reduce((n, p) => n + p.made, 0);

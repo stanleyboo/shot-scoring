@@ -1,9 +1,16 @@
 import Link from 'next/link';
-import { getDb, getAllPlayers } from '@/lib/db';
+import { redirect } from 'next/navigation';
+import { getDb, getAllPlayers, getActiveSession } from '@/lib/db';
 import NewSessionForm from '@/components/NewSessionForm';
 
+export const dynamic = 'force-dynamic';
+
 export default function NewSessionPage() {
-  const players = getAllPlayers(getDb());
+  const db = getDb();
+  const active = getActiveSession(db);
+  if (active) redirect(`/sessions/${active.id}`);
+
+  const players = getAllPlayers(db);
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
