@@ -13,6 +13,7 @@ import {
   getSessionWithStats,
   deleteSession,
   renameSession,
+  reopenSession,
   recordShot,
   undoLastShot,
   getPlayerCareerStats,
@@ -160,6 +161,15 @@ describe('session queries', () => {
     const sessions = getAllSessions(db);
     expect(sessions[0].name).toBe('Second');
     expect(sessions[1].name).toBe('First');
+  });
+
+  it('reopenSession clears ended_at making the session active again', () => {
+    const session = createSession(db, 'Test', [player1.id]);
+    endSession(db, session.id);
+    expect(getActiveSession(db)).toBeNull();
+    reopenSession(db, session.id);
+    expect(getActiveSession(db)).not.toBeNull();
+    expect(getActiveSession(db)!.id).toBe(session.id);
   });
 
   it('deleteSession removes the session and cascades shots', () => {

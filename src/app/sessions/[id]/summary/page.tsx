@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getDb, getSessionWithStats } from '@/lib/db';
 import RenameSessionForm from '@/components/RenameSessionForm';
 import DeleteSessionButton from '@/components/DeleteSessionButton';
+import ReopenSessionButton from '@/components/ReopenSessionButton';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -105,6 +106,7 @@ export default async function SessionSummaryPage({ params }: Props) {
         >
           View History
         </Link>
+        <ReopenSessionButton sessionId={sessionId} />
         <Link
           href="/sessions/new"
           className="flex-1 rounded-xl bg-indigo-600 py-3 text-center font-bold text-white hover:bg-indigo-500 transition-colors"

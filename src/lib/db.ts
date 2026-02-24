@@ -222,6 +222,13 @@ export function getSessionWithStats(
   return { session, players };
 }
 
+export function reopenSession(db: Database.Database, sessionId: number): void {
+  const result = db
+    .prepare('UPDATE sessions SET ended_at = NULL WHERE id = ?')
+    .run(sessionId);
+  if (result.changes === 0) throw new Error(`Session ${sessionId} not found`);
+}
+
 export function deleteSession(db: Database.Database, sessionId: number): void {
   // ON DELETE CASCADE handles shots and session_players automatically
   const result = db.prepare('DELETE FROM sessions WHERE id = ?').run(sessionId);
