@@ -1,20 +1,17 @@
 import Link from 'next/link';
+import { isAdmin } from '@/lib/auth';
+import NavLinks from './NavLinks';
 
-export default function Nav() {
+export default async function Nav() {
+  const admin = await isAdmin();
+
   return (
-    <nav className="border-b border-slate-700 bg-slate-900 px-4 py-3">
-      <div className="mx-auto flex max-w-2xl items-center justify-between">
-        <Link href="/" className="text-lg font-bold text-indigo-400 hover:text-indigo-300 transition-colors">
-          ShotScore
+    <nav className="border-b-2 border-yellow-400 bg-black">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
+        <Link href="/" className="bg-yellow-400 px-3 py-2 text-xl font-black uppercase tracking-[0.18em] text-black transition hover:bg-yellow-300">
+          Langwith Netball
         </Link>
-        <div className="flex gap-5 text-sm">
-          <Link href="/sessions" className="text-slate-300 hover:text-white transition-colors">
-            History
-          </Link>
-          <Link href="/players" className="text-slate-300 hover:text-white transition-colors">
-            Players
-          </Link>
-        </div>
+        <NavLinks isAdmin={admin} />
       </div>
     </nav>
   );
