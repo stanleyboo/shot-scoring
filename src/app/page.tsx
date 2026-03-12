@@ -7,6 +7,7 @@ import {
   getAllPlayers,
   getAllSessions,
   getMatchResults,
+  getSetting,
   getTeamSummaries,
 } from '@/lib/db';
 import { canCreate, canEdit } from '@/lib/auth';
@@ -28,6 +29,7 @@ export default async function HomePage() {
   }
 
   const creator = await canCreate();
+  const clubName = getSetting(db, 'club_name') ?? 'Langwith Netball';
   const sessions = getAllSessions(db);
   const players = getAllPlayers(db);
   const teams = getTeamSummaries(db);
@@ -46,7 +48,7 @@ export default async function HomePage() {
           <div className="space-y-3">
             <p className="text-xs font-semibold uppercase tracking-[0.1em] text-yellow-300/80">Club Dashboard</p>
             <div>
-              <h1 className="text-4xl font-black tracking-tight text-yellow-300 sm:text-5xl">Langwith Netball</h1>
+              <h1 className="text-4xl font-black tracking-tight text-yellow-300 sm:text-5xl">{clubName}</h1>
               <p className="mt-2 max-w-2xl text-sm text-stone-300 sm:text-base">
                 Match history, player records, and leaderboards with separate breakdowns for every Langwith team.
               </p>
@@ -79,7 +81,7 @@ export default async function HomePage() {
 
       {totalMatches === 0 && players.length === 0 ? (
         <div className="border border-dashed border-yellow-400/30 bg-[#111] rounded-lg p-12 text-center space-y-4">
-          <h2 className="text-xl font-bold text-stone-300">Welcome to Langwith Netball</h2>
+          <h2 className="text-xl font-bold text-stone-300">Welcome to {clubName}</h2>
           <p className="text-stone-500">Add some players and start your first match to see stats here.</p>
           <div className="flex justify-center gap-4">
             <Link href="/players" className="bg-yellow-400 text-black font-bold rounded-lg px-5 py-2.5 hover:bg-yellow-300 transition-all">
