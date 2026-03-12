@@ -7,6 +7,7 @@ import DeleteSessionButton from '@/components/DeleteSessionButton';
 import ReopenSessionButton from '@/components/ReopenSessionButton';
 import SessionTeamForm from '@/components/SessionTeamForm';
 import Breadcrumb from '@/components/Breadcrumb';
+import ExportButton from '@/components/ExportButton';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -200,6 +201,11 @@ export default async function SessionSummaryPage({ params }: Props) {
       )}
 
       <div className="flex gap-3">
+        <ExportButton
+          sessionId={sessionId}
+          sessionName={session.name}
+          sessionDate={session.started_at}
+        />
         <Link
           href="/sessions"
           className="flex-1 rounded-lg border border-stone-800 py-3 text-center text-stone-200 transition-colors hover:bg-black/60"
