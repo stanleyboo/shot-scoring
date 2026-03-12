@@ -1,4 +1,4 @@
-import { getDb, getAllPlayers, getAllTeams } from '@/lib/db';
+import { getDb, getAllPlayersWithShots, getAllTeams } from '@/lib/db';
 import { isAdmin } from '@/lib/auth';
 import AddPlayerForm from '@/components/AddPlayerForm';
 import PlayerListPage from '@/components/PlayerListPage';
@@ -9,19 +9,7 @@ export default async function PlayersPage() {
   const db = getDb();
   const admin = await isAdmin();
   const teams = getAllTeams(db);
-  const players = db
-    .prepare(
-      `SELECT
-         p.*,
-         t.name AS team_name,
-         COALESCE(COUNT(s.id), 0) AS total_shots
-       FROM players p
-       JOIN teams t ON t.id = p.team_id
-       LEFT JOIN shots s ON s.player_id = p.id
-       GROUP BY p.id
-       ORDER BY t.name ASC, p.name ASC`
-    )
-    .all() as (ReturnType<typeof getAllPlayers>[number] & { total_shots: number })[];
+  const players = getAllPlayersWithShots(db);
 
   return (
     <div className="space-y-6">

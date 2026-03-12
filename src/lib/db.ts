@@ -208,6 +208,11 @@ export function applySchema(db: Database.Database): void {
     db.exec('ALTER TABLE session_players ADD COLUMN is_opposition INTEGER NOT NULL DEFAULT 0');
   }
 
+  const playerColsCheck = db.pragma('table_info(players)') as { name: string }[];
+  if (!playerColsCheck.some(col => col.name === 'archived_at')) {
+    db.exec('ALTER TABLE players ADD COLUMN archived_at TEXT');
+  }
+
   db.prepare('UPDATE players SET team_id = ? WHERE team_id IS NULL').run(defaultTeamId);
   db.prepare('UPDATE sessions SET team_id = ? WHERE team_id IS NULL').run(defaultTeamId);
 
@@ -319,16 +324,36 @@ export function createPlayer(db: Database.Database, name: string, teamId: number
     .get(trimmed, teamId) as Player;
 }
 
-export function getAllPlayers(db: Database.Database, teamId?: number): Player[] {
+export function getAllPlayers(db: Database.Database, teamId?: number, includeArchived = false): Player[] {
+  const conditions: string[] = [];
+  if (!includeArchived) conditions.push('p.archived_at IS NULL');
+  if (teamId) conditions.push('p.team_id = @teamId');
+  const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
   return db
     .prepare(
       `SELECT p.*, t.name AS team_name
        FROM players p
        JOIN teams t ON t.id = p.team_id
-       ${teamId ? 'WHERE p.team_id = @teamId' : ''}
+       ${where}
        ORDER BY t.name ASC, p.name ASC`
     )
     .all(teamId ? { teamId } : {}) as Player[];
+}
+
+export function getAllPlayersWithShots(db: Database.Database, includeArchived = false): (Player & { total_shots: number; team_name: string })[] {
+  const where = includeArchived ? '' : 'WHERE p.archived_at IS NULL';
+  return db.prepare(
+    `SELECT
+       p.*,
+       t.name AS team_name,
+       COALESCE(COUNT(s.id), 0) AS total_shots
+     FROM players p
+     JOIN teams t ON t.id = p.team_id
+     LEFT JOIN shots s ON s.player_id = p.id
+     ${where}
+     GROUP BY p.id
+     ORDER BY t.name ASC, p.name ASC`
+  ).all() as (Player & { total_shots: number; team_name: string })[];
 }
 
 export function getPlayerById(db: Database.Database, id: number): Player | null {
