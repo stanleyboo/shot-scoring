@@ -147,6 +147,12 @@ export default async function PlayerProfilePage({ params }: Props) {
           </table>
         </div>
       )}
+
+      {stats.sessions.length === 0 && (
+        <div className="border border-dashed border-yellow-400/30 bg-[#111] rounded-lg p-8 text-center">
+          <p className="text-stone-400">No match history yet.</p>
+        </div>
+      )}
     </div>
   );
 }

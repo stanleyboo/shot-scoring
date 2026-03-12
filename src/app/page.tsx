@@ -77,6 +77,23 @@ export default async function HomePage() {
         ))}
       </section>
 
+      {totalMatches === 0 && players.length === 0 ? (
+        <div className="border border-dashed border-yellow-400/30 bg-[#111] rounded-lg p-12 text-center space-y-4">
+          <h2 className="text-xl font-bold text-stone-300">Welcome to Langwith Netball</h2>
+          <p className="text-stone-500">Add some players and start your first match to see stats here.</p>
+          <div className="flex justify-center gap-4">
+            <Link href="/players" className="bg-yellow-400 text-black font-bold rounded-lg px-5 py-2.5 hover:bg-yellow-300 transition-all">
+              Add Players
+            </Link>
+            {creator && (
+              <Link href="/sessions/new" className="border border-stone-800 text-stone-300 rounded-lg px-5 py-2.5 hover:border-yellow-500 hover:text-yellow-300 transition-all">
+                Start Match
+              </Link>
+            )}
+          </div>
+        </div>
+      ) : (
+      <>
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-white">Team Breakdown</h2>
@@ -189,6 +206,8 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+      </>
+      )}
     </div>
   );
 }
