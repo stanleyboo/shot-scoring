@@ -19,7 +19,7 @@ export default function ReopenSessionButton({ sessionId }: { sessionId: number }
     <button
       onClick={handleReopen}
       disabled={isPending}
-      className="flex-1 rounded-xl border border-slate-600 py-3 text-center text-slate-300 hover:bg-slate-800 disabled:opacity-50 transition-colors"
+      className="flex-1 border border-stone-800 bg-transparent text-stone-300 rounded-lg py-3 text-center hover:border-yellow-500 hover:text-yellow-300 disabled:opacity-50 transition-all"
     >
       {isPending ? 'Opening...' : 'Edit Shots'}
     </button>

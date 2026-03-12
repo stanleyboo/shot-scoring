@@ -29,12 +29,12 @@ export default function RenameSessionForm({ sessionId, currentName }: Props) {
   if (!editing) {
     return (
       <div className="flex items-center gap-2">
-        <h1 className="text-2xl font-bold text-slate-100">
+        <h1 className="text-2xl font-bold text-stone-50">
           {currentName ?? 'Training Session'}
         </h1>
         <button
           onClick={() => setEditing(true)}
-          className="text-xs text-slate-500 hover:text-slate-300 transition-colors px-2 py-1 rounded"
+          className="text-xs text-stone-500 hover:text-stone-300 transition-colors px-2 py-1 rounded"
         >
           Rename
         </button>
@@ -51,13 +51,13 @@ export default function RenameSessionForm({ sessionId, currentName }: Props) {
         onChange={e => setValue(e.target.value)}
         placeholder="Session name..."
         maxLength={100}
-        className="rounded-lg border border-indigo-500 bg-slate-800 px-3 py-1.5 text-lg font-bold text-slate-100 placeholder-slate-500 focus:outline-none"
+        className="bg-[#111] border border-stone-800 rounded-lg px-3 py-1.5 text-lg font-bold text-stone-50 placeholder:text-stone-500 focus:border-yellow-500 focus:outline-none focus:ring-1 focus:ring-yellow-500/30"
         disabled={isPending}
       />
       <button
         type="submit"
         disabled={isPending}
-        className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50 transition-colors"
+        className="bg-yellow-400 text-black font-bold rounded-lg px-3 py-1.5 text-sm hover:bg-yellow-300 active:scale-[0.98] disabled:opacity-50 transition-all"
       >
         Save
       </button>
@@ -65,7 +65,7 @@ export default function RenameSessionForm({ sessionId, currentName }: Props) {
         type="button"
         onClick={handleCancel}
         disabled={isPending}
-        className="rounded-lg px-3 py-1.5 text-sm text-slate-400 hover:text-slate-200 transition-colors"
+        className="rounded-lg px-3 py-1.5 text-sm text-stone-400 hover:text-stone-200 transition-colors"
       >
         Cancel
       </button>
