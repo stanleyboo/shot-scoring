@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { createPlayer } from '@/actions/players';
+import { useToast } from './ToastProvider';
 import type { Team } from '@/lib/db';
 
 export default function AddPlayerForm({ teams }: { teams: Team[] }) {
@@ -9,6 +10,7 @@ export default function AddPlayerForm({ teams }: { teams: Team[] }) {
   const [teamId, setTeamId] = useState(teams[0]?.id?.toString() ?? '');
   const [error, setError] = useState('');
   const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -18,6 +20,7 @@ export default function AddPlayerForm({ teams }: { teams: Team[] }) {
       try {
         await createPlayer(name, Number(teamId));
         setName('');
+        toast('Player added');
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to add player');
       }

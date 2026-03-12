@@ -2,11 +2,13 @@
 
 import { useState, useTransition } from 'react';
 import { createTeam } from '@/actions/teams';
+import { useToast } from './ToastProvider';
 
 export default function AddTeamForm() {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -16,6 +18,7 @@ export default function AddTeamForm() {
       try {
         await createTeam(name);
         setName('');
+        toast('Team created');
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to create team');
       }

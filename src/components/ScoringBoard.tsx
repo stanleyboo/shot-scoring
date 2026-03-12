@@ -7,6 +7,7 @@ import { recordStatEvent, undoLastStatEvent } from '@/actions/stats';
 import { endSession, updateOppositionScore, togglePlayerOpposition } from '@/actions/sessions';
 import PlayerScoreCard from './PlayerScoreCard';
 import ConfirmModal from './ConfirmModal';
+import { useToast } from './ToastProvider';
 import type { Session, SessionWithStats, StatType } from '@/lib/db';
 
 type PlayerStats = SessionWithStats['players'][number];
@@ -28,6 +29,7 @@ export default function ScoringBoard({ session, players, statTypes }: Props) {
   const [oppScoreManual, setOppScoreManual] = useState(session.opposition_score);
   const [oppAttemptedManual, setOppAttemptedManual] = useState(session.opposition_attempted);
   const [showEndModal, setShowEndModal] = useState(false);
+  const { toast } = useToast();
 
   const [optimisticPlayers, addOptimistic] = useOptimistic(
     players,
@@ -123,6 +125,7 @@ export default function ScoringBoard({ session, players, statTypes }: Props) {
     setShowEndModal(false);
     startTransition(async () => {
       await endSession(session.id);
+      toast('Match ended');
       router.push(`/sessions/${session.id}/summary`);
     });
   }

@@ -2,11 +2,13 @@
 
 import { useState, useTransition } from 'react';
 import { createStatType } from '@/actions/stat-types';
+import { useToast } from './ToastProvider';
 
 export default function AddStatTypeForm() {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -16,6 +18,7 @@ export default function AddStatTypeForm() {
       try {
         await createStatType(name);
         setName('');
+        toast('Stat type added');
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to add stat type');
       }
