@@ -1,7 +1,26 @@
 @import "tailwindcss";
 
+:root {
+  --page-bg:
+    linear-gradient(90deg, rgba(250, 204, 21, 0.08) 0, rgba(250, 204, 21, 0.08) 24px, transparent 24px, transparent 120px),
+    linear-gradient(180deg, #161616 0%, #0d0d0d 100%);
+}
+
+html {
+  background: #000;
+}
+
 body {
-  background: #0f172a;
-  color: #f1f5f9;
-  font-family: system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  background: var(--page-bg);
+  color: #fafaf9;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  touch-action: manipulation;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
