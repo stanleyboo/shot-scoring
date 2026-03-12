@@ -69,16 +69,16 @@ export default function PlayerList({
 
   if (players.length === 0) {
     return (
-      <p className="border-2 border-stone-900 bg-black px-6 py-8 text-center text-sm uppercase tracking-[0.18em] text-stone-500">
+      <p className="border border-stone-800 bg-[#111] rounded-lg px-6 py-8 text-center text-sm uppercase tracking-[0.18em] text-stone-500">
         No players yet.
       </p>
     );
   }
 
   return (
-    <ul className="border-2 border-stone-900 bg-[#111111]">
+    <ul className="border border-stone-800 bg-[#111] rounded-lg overflow-hidden">
       {players.map(player => (
-        <li key={player.id} className="border-t-2 border-stone-900 first:border-t-0">
+        <li key={player.id} className="border-t border-stone-800 first:border-t-0">
           <div className="flex flex-col gap-3 px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
             {editingId === player.id ? (
               <form onSubmit={event => handleRename(event, player.id)} className="flex flex-1 items-center gap-2">
