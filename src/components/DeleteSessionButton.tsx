@@ -1,8 +1,9 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { deleteSession } from '@/actions/sessions';
+import ConfirmModal from './ConfirmModal';
 
 interface Props {
   sessionId: number;
@@ -11,10 +12,15 @@ interface Props {
 
 export default function DeleteSessionButton({ sessionId, redirectTo }: Props) {
   const [isPending, startTransition] = useTransition();
+  const [showModal, setShowModal] = useState(false);
   const router = useRouter();
 
   function handleDelete() {
-    if (!confirm('Delete this session and all its shots? This cannot be undone.')) return;
+    setShowModal(true);
+  }
+
+  function confirmDelete() {
+    setShowModal(false);
     startTransition(async () => {
       await deleteSession(sessionId);
       if (redirectTo) router.push(redirectTo);
@@ -22,13 +28,24 @@ export default function DeleteSessionButton({ sessionId, redirectTo }: Props) {
   }
 
   return (
-    <button
-      onClick={handleDelete}
-      disabled={isPending}
-      title="Delete session"
-      className="rounded-lg px-3 py-1.5 text-sm text-stone-500 hover:bg-red-950/40 hover:text-red-400 disabled:opacity-40 transition-colors"
-    >
-      {isPending ? '...' : 'Delete'}
-    </button>
+    <>
+      <button
+        onClick={handleDelete}
+        disabled={isPending}
+        title="Delete session"
+        className="rounded-lg px-3 py-1.5 text-sm text-stone-500 hover:bg-red-950/40 hover:text-red-400 disabled:opacity-40 transition-colors"
+      >
+        {isPending ? '...' : 'Delete'}
+      </button>
+      <ConfirmModal
+        open={showModal}
+        title="Delete Session"
+        message="Delete this session and all its shots? This cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => setShowModal(false)}
+      />
+    </>
   );
 }

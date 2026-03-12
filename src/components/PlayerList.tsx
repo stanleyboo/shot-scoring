@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { deletePlayer, movePlayerTeam, renamePlayer } from '@/actions/players';
+import ConfirmModal from './ConfirmModal';
 import type { Player, Team } from '@/lib/db';
 
 type PlayerWithShots = Player & { total_shots: number };
@@ -19,6 +20,7 @@ export default function PlayerList({
   const [isPending, startTransition] = useTransition();
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string; shotCount: number } | null>(null);
 
   function startEditing(player: PlayerWithShots) {
     setEditingId(player.id);
@@ -54,10 +56,13 @@ export default function PlayerList({
   }
 
   function handleDelete(id: number, name: string, shotCount: number) {
-    const message = shotCount > 0
-      ? `Delete ${name}? This will remove all their shot history across all sessions.`
-      : `Remove ${name}?`;
-    if (!confirm(message)) return;
+    setDeleteTarget({ id, name, shotCount });
+  }
+
+  function confirmDelete() {
+    if (!deleteTarget) return;
+    const { id } = deleteTarget;
+    setDeleteTarget(null);
     startTransition(async () => {
       try {
         await deletePlayer(id);
@@ -176,6 +181,19 @@ export default function PlayerList({
           </div>
         </li>
       ))}
+      <ConfirmModal
+        open={deleteTarget !== null}
+        title="Delete Player"
+        message={
+          deleteTarget?.shotCount
+            ? `Delete ${deleteTarget.name}? This will remove all their shot history across all sessions.`
+            : `Remove ${deleteTarget?.name ?? ''}?`
+        }
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </ul>
   );
 }

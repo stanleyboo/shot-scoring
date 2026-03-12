@@ -2,12 +2,14 @@
 
 import { useState, useTransition } from 'react';
 import { deleteStatType, renameStatType } from '@/actions/stat-types';
+import ConfirmModal from './ConfirmModal';
 import type { StatType } from '@/lib/db';
 
 export default function StatTypeList({ statTypes }: { statTypes: StatType[] }) {
   const [isPending, startTransition] = useTransition();
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
 
   function startEditing(st: StatType) {
     setEditingId(st.id);
@@ -33,7 +35,13 @@ export default function StatTypeList({ statTypes }: { statTypes: StatType[] }) {
   }
 
   function handleDelete(id: number, name: string) {
-    if (!confirm(`Delete "${name}"? This will remove all recorded events of this type.`)) return;
+    setDeleteTarget({ id, name });
+  }
+
+  function confirmDelete() {
+    if (!deleteTarget) return;
+    const { id } = deleteTarget;
+    setDeleteTarget(null);
     startTransition(async () => {
       try {
         await deleteStatType(id);
@@ -106,6 +114,15 @@ export default function StatTypeList({ statTypes }: { statTypes: StatType[] }) {
           )}
         </li>
       ))}
+      <ConfirmModal
+        open={deleteTarget !== null}
+        title="Delete Stat Type"
+        message={`Delete "${deleteTarget?.name ?? ''}"? This will remove all recorded events of this type.`}
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </ul>
   );
 }
