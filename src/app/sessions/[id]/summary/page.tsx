@@ -6,6 +6,7 @@ import RenameSessionForm from '@/components/RenameSessionForm';
 import DeleteSessionButton from '@/components/DeleteSessionButton';
 import ReopenSessionButton from '@/components/ReopenSessionButton';
 import SessionTeamForm from '@/components/SessionTeamForm';
+import Breadcrumb from '@/components/Breadcrumb';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -132,32 +133,32 @@ export default async function SessionSummaryPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={[
+        { label: 'Matches', href: '/sessions' },
+        { label: session.name ?? 'Training Session' },
+      ]} />
+
       <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3">
-          <Link href="/sessions" className="mt-1.5 text-stone-500 transition-colors hover:text-yellow-300">
-            ←
-          </Link>
-          <div>
-            {admin ? (
-              <div className="space-y-3">
-                <RenameSessionForm sessionId={sessionId} currentName={session.name} />
-                <SessionTeamForm sessionId={sessionId} currentTeamId={session.team_id} teams={teams} />
-              </div>
-            ) : (
-              <h1 className="text-xl font-bold text-white">
-                {session.name ?? 'Training Session'}
-              </h1>
-            )}
-            <p className="mt-0.5 text-sm text-yellow-300">{session.team_name}</p>
-            <p className="text-sm text-stone-500 mt-0.5">
-              {new Date(session.started_at).toLocaleDateString('en-GB', {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              })}
-            </p>
-          </div>
+        <div>
+          {admin ? (
+            <div className="space-y-3">
+              <RenameSessionForm sessionId={sessionId} currentName={session.name} />
+              <SessionTeamForm sessionId={sessionId} currentTeamId={session.team_id} teams={teams} />
+            </div>
+          ) : (
+            <h1 className="text-xl font-bold text-white">
+              {session.name ?? 'Training Session'}
+            </h1>
+          )}
+          <p className="mt-0.5 text-sm text-yellow-300">{session.team_name}</p>
+          <p className="text-sm text-stone-500 mt-0.5">
+            {new Date(session.started_at).toLocaleDateString('en-GB', {
+              weekday: 'long',
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            })}
+          </p>
         </div>
         {admin && <DeleteSessionButton sessionId={sessionId} redirectTo="/sessions" />}
       </div>
