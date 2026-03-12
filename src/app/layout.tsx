@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import Nav from '@/components/Nav';
+import ToastProvider from '@/components/ToastProvider';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -29,10 +30,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className={`${inter.className} min-h-screen antialiased`}>
-        <Nav />
-        <main className="mx-auto max-w-7xl px-4 py-8">
-          {children}
-        </main>
+        <ToastProvider>
+          <Nav />
+          <main className="mx-auto max-w-7xl px-4 py-8">
+            {children}
+          </main>
+        </ToastProvider>
       </body>
     </html>
   );
