@@ -4,11 +4,12 @@ import { revalidatePath } from 'next/cache';
 import {
   getDb,
   createPlayer as dbCreate,
-  deletePlayer as dbDelete,
+  softDeletePlayer as dbSoftDelete,
   renamePlayer as dbRename,
   getTeamById,
   getPlayerById,
   updatePlayerTeam as dbUpdatePlayerTeam,
+  restorePlayer as dbRestore,
 } from '@/lib/db';
 import { isAdmin } from '@/lib/auth';
 
@@ -33,10 +34,20 @@ export async function deletePlayer(playerId: number) {
   await requireAdmin();
   const db = getDb();
   const player = getPlayerById(db, playerId);
-  dbDelete(db, playerId);
+  dbSoftDelete(db, playerId);
   revalidatePath('/players');
   revalidatePath('/sessions');
+  revalidatePath('/admin');
   if (player) revalidatePath(`/teams/${player.team_id}`);
+}
+
+export async function restorePlayer(playerId: number) {
+  await requireAdmin();
+  const db = getDb();
+  dbRestore(db, playerId);
+  revalidatePath('/players');
+  revalidatePath('/sessions');
+  revalidatePath('/admin');
 }
 
 export async function renamePlayer(playerId: number, name: string) {

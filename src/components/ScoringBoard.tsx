@@ -28,7 +28,9 @@ export default function ScoringBoard({ session, players, statTypes }: Props) {
   const [isPending, startTransition] = useTransition();
   const [oppScoreManual, setOppScoreManual] = useState(session.opposition_score);
   const [oppAttemptedManual, setOppAttemptedManual] = useState(session.opposition_attempted);
+  const [oppHistory, setOppHistory] = useState<({ type: 'scored' | 'missed' } | { type: 'reset'; prevScore: number; prevAttempted: number })[]>([]);
   const [showEndModal, setShowEndModal] = useState(false);
+  const [quarter, setQuarter] = useState(1);
   const { toast } = useToast();
 
   const [optimisticPlayers, addOptimistic] = useOptimistic(
@@ -56,18 +58,20 @@ export default function ScoringBoard({ session, players, statTypes }: Props) {
       })
   );
 
-  const teamScore = optimisticPlayers
-    .filter(p => !p.is_opposition)
-    .reduce((n, p) => n + p.made, 0);
-  const oppShotScore = optimisticPlayers
-    .filter(p => p.is_opposition)
-    .reduce((n, p) => n + p.made, 0);
+  const homePlrs = optimisticPlayers.filter(p => !p.is_opposition);
+  const oppPlrs = optimisticPlayers.filter(p => p.is_opposition);
+  const teamScore = homePlrs.reduce((n, p) => n + p.made, 0);
+  const teamAttempts = homePlrs.reduce((n, p) => n + p.attempted, 0);
+  const oppShotScore = oppPlrs.reduce((n, p) => n + p.made, 0);
   const oppTotal = oppScoreManual + oppShotScore;
+  const oppTotalAttempts = oppAttemptedManual + oppPlrs.reduce((n, p) => n + p.attempted, 0);
+  const teamPct = teamAttempts > 0 ? Math.round((teamScore / teamAttempts) * 100) : null;
+  const oppPct = oppTotalAttempts > 0 ? Math.round((oppTotal / oppTotalAttempts) * 100) : null;
 
   function handleShot(playerId: number, scored: boolean) {
     startTransition(async () => {
       addOptimistic({ type: 'shot', playerId, scored });
-      await recordShot(session.id, playerId, scored);
+      await recordShot(session.id, playerId, scored, quarter);
     });
   }
 
@@ -81,7 +85,7 @@ export default function ScoringBoard({ session, players, statTypes }: Props) {
   function handleStatEvent(playerId: number, statTypeId: number) {
     startTransition(async () => {
       addOptimistic({ type: 'stat', playerId, statTypeId, delta: 1 });
-      await recordStatEvent(session.id, playerId, statTypeId);
+      await recordStatEvent(session.id, playerId, statTypeId, quarter);
     });
   }
 
@@ -99,11 +103,12 @@ export default function ScoringBoard({ session, players, statTypes }: Props) {
     });
   }
 
-  function handleOppScore(delta: number) {
-    const nextScore = Math.max(0, oppScoreManual + delta);
-    const nextAttempted = delta > 0 ? oppAttemptedManual + 1 : Math.max(0, oppAttemptedManual - 1);
+  function handleOppScored() {
+    const nextScore = oppScoreManual + 1;
+    const nextAttempted = oppAttemptedManual + 1;
     setOppScoreManual(nextScore);
     setOppAttemptedManual(nextAttempted);
+    setOppHistory(h => [...h, { type: 'scored' }]);
     startTransition(async () => {
       await updateOppositionScore(session.id, nextScore, nextAttempted);
     });
@@ -112,8 +117,40 @@ export default function ScoringBoard({ session, players, statTypes }: Props) {
   function handleOppMiss() {
     const nextAttempted = oppAttemptedManual + 1;
     setOppAttemptedManual(nextAttempted);
+    setOppHistory(h => [...h, { type: 'missed' }]);
     startTransition(async () => {
       await updateOppositionScore(session.id, oppScoreManual, nextAttempted);
+    });
+  }
+
+  function handleOppReset() {
+    const prevScore = oppScoreManual;
+    const prevAttempted = oppAttemptedManual;
+    setOppScoreManual(0);
+    setOppAttemptedManual(0);
+    setOppHistory(h => [...h, { type: 'reset', prevScore, prevAttempted }]);
+    startTransition(async () => {
+      await updateOppositionScore(session.id, 0, 0);
+    });
+  }
+
+  function handleOppUndo() {
+    if (oppHistory.length === 0) return;
+    const last = oppHistory[oppHistory.length - 1];
+    let nextScore: number;
+    let nextAttempted: number;
+    if (last.type === 'reset') {
+      nextScore = last.prevScore;
+      nextAttempted = last.prevAttempted;
+    } else {
+      nextScore = last.type === 'scored' ? Math.max(0, oppScoreManual - 1) : oppScoreManual;
+      nextAttempted = Math.max(0, oppAttemptedManual - 1);
+    }
+    setOppScoreManual(nextScore);
+    setOppAttemptedManual(nextAttempted);
+    setOppHistory(h => h.slice(0, -1));
+    startTransition(async () => {
+      await updateOppositionScore(session.id, nextScore, nextAttempted);
     });
   }
 
@@ -139,7 +176,7 @@ export default function ScoringBoard({ session, players, statTypes }: Props) {
       <div className="space-y-4 lg:space-y-0 lg:flex lg:items-center lg:justify-between lg:gap-4">
         <div className="flex items-center justify-between gap-2 lg:gap-3">
           <div className="min-w-0">
-            <h1 className="text-lg font-bold text-slate-100 truncate sm:text-xl lg:text-base">
+            <h1 className="text-lg font-bold text-stone-50 truncate sm:text-xl lg:text-base">
               {session.name ?? 'Training Session'}
             </h1>
             <p className="text-xs text-yellow-300 sm:text-sm lg:text-xs">{session.team_name}</p>
@@ -162,41 +199,69 @@ export default function ScoringBoard({ session, players, statTypes }: Props) {
           </button>
         </div>
 
-        <div className="flex items-center justify-center gap-4 rounded-2xl border border-yellow-400/15 bg-black/55 px-4 py-3 lg:rounded-xl lg:px-3 lg:py-1.5 lg:gap-3">
-          <div className="text-center">
-            <p className="text-xs font-medium uppercase tracking-wide text-stone-500 lg:text-[10px]">{session.team_name}</p>
-            <p className="text-3xl font-black text-yellow-300 tabular-nums sm:text-4xl lg:text-2xl">{teamScore}</p>
+        <div className="flex items-center justify-center gap-3 rounded-xl border border-yellow-400/15 bg-black/55 px-3 py-2 sm:gap-4 sm:px-4 sm:py-3 lg:rounded-xl lg:px-3 lg:py-1.5 lg:gap-3">
+          <div className="text-center min-w-0">
+            <p className="text-[10px] font-medium uppercase tracking-wide text-stone-500 truncate sm:text-xs lg:text-[10px]">{session.team_name}</p>
+            <p className="text-2xl font-black text-yellow-300 tabular-nums sm:text-3xl lg:text-2xl">{teamScore}</p>
+            <p className="text-[10px] text-stone-500 tabular-nums">{teamPct !== null ? `${teamPct}%` : '—'}</p>
           </div>
-          <span className="text-2xl font-bold text-stone-700 lg:text-xl">:</span>
-          <div className="text-center">
-            <p className="text-xs font-medium uppercase tracking-wide text-stone-500 lg:text-[10px]">Opposition</p>
-            <p className="text-3xl font-black text-white tabular-nums sm:text-4xl lg:text-2xl">{oppTotal}</p>
+          <span className="text-xl font-bold text-stone-700 sm:text-2xl lg:text-xl">:</span>
+          <div className="text-center min-w-0">
+            <p className="text-[10px] font-medium uppercase tracking-wide text-stone-500 sm:text-xs lg:text-[10px]">Opp</p>
+            <p className="text-2xl font-black text-white tabular-nums sm:text-3xl lg:text-2xl">{oppTotal}</p>
+            <p className="text-[10px] text-stone-500 tabular-nums">{oppPct !== null ? `${oppPct}%` : '—'}</p>
           </div>
-          <div className="flex gap-1 ml-2 lg:ml-1">
+          <div className="flex gap-1 ml-1 sm:ml-2 lg:ml-1">
             <button
-              onClick={() => handleOppScore(1)}
+              onClick={() => handleOppScored()}
               disabled={isPending}
-              className="rounded-lg bg-green-700 px-2.5 py-1.5 text-xs font-black text-white hover:bg-green-600 active:scale-95 disabled:opacity-50 transition-all min-h-[36px] lg:px-2 lg:py-1 lg:min-h-0"
+              className="rounded-lg bg-yellow-400 px-2 py-1 text-[10px] font-black text-black hover:bg-yellow-300 active:scale-95 disabled:opacity-50 transition-all sm:px-2.5 sm:py-1.5 sm:text-xs lg:px-2 lg:py-1 lg:min-h-0"
             >
               SCORED
             </button>
             <button
               onClick={() => handleOppMiss()}
               disabled={isPending}
-              className="rounded-lg bg-red-700 px-2.5 py-1.5 text-xs font-black text-white hover:bg-red-600 active:scale-95 disabled:opacity-50 transition-all min-h-[36px] lg:px-2 lg:py-1 lg:min-h-0"
+              className="rounded-lg bg-red-600 px-2 py-1 text-[10px] font-black text-white hover:bg-red-500 active:scale-95 disabled:opacity-50 transition-all sm:px-2.5 sm:py-1.5 sm:text-xs lg:px-2 lg:py-1 lg:min-h-0"
             >
               MISSED
             </button>
             <button
-              onClick={() => handleOppScore(-1)}
-              disabled={isPending || oppScoreManual === 0}
-              className="rounded-lg bg-slate-700 px-2 py-1.5 text-sm text-slate-400 hover:bg-slate-600 active:scale-95 disabled:opacity-30 transition-all min-h-[36px] lg:px-1.5 lg:py-1 lg:text-xs lg:min-h-0"
+              onClick={() => handleOppUndo()}
+              disabled={isPending || oppHistory.length === 0}
+              className="rounded-lg bg-stone-700 px-1.5 py-1 text-xs text-stone-400 hover:bg-stone-600 active:scale-95 disabled:opacity-30 transition-all sm:px-2 sm:py-1.5 sm:text-sm lg:px-1.5 lg:py-1 lg:text-xs lg:min-h-0"
               title="Undo"
             >
               ↩
             </button>
+            <button
+              onClick={() => handleOppReset()}
+              disabled={isPending || (oppScoreManual === 0 && oppAttemptedManual === 0)}
+              className="rounded-lg bg-stone-700 px-1.5 py-1 text-[10px] font-bold text-stone-400 hover:bg-stone-600 active:scale-95 disabled:opacity-30 transition-all sm:px-2 sm:py-1.5 sm:text-xs lg:px-1.5 lg:py-1 lg:text-xs lg:min-h-0"
+              title="Reset opponent score"
+            >
+              RST
+            </button>
           </div>
         </div>
+      </div>
+
+      {/* Quarter selector */}
+      <div className="flex items-center justify-center gap-1">
+        {[1, 2, 3, 4].map(q => (
+          <button
+            key={q}
+            type="button"
+            onClick={() => setQuarter(q)}
+            className={`px-4 py-2 text-sm font-bold rounded-lg transition-all ${
+              quarter === q
+                ? 'bg-yellow-400 text-black'
+                : 'border border-stone-800 text-stone-400 hover:border-yellow-500 hover:text-yellow-300'
+            }`}
+          >
+            Q{q}
+          </button>
+        ))}
       </div>
 
       {/* Player cards */}

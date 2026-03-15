@@ -1,25 +1,33 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { getDb, getAllPlayers, getActiveSession } from '@/lib/db';
+import { getDb, getAllPlayers, getAllTeams, getActiveSession } from '@/lib/db';
+import { canCreate } from '@/lib/auth';
 import NewSessionForm from '@/components/NewSessionForm';
 
 export const dynamic = 'force-dynamic';
 
-export default function NewSessionPage() {
+export default async function NewSessionPage() {
+  const creator = await canCreate();
+  if (!creator) redirect('/sessions');
+
   const db = getDb();
   const active = getActiveSession(db);
   if (active) redirect(`/sessions/${active.id}`);
 
   const players = getAllPlayers(db);
+  const teams = getAllTeams(db);
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <Link href="/" className="text-slate-500 hover:text-slate-300 transition-colors">
+        <Link href="/" className="text-stone-500 transition-colors hover:text-yellow-300">
           ←
         </Link>
-        <h1 className="text-2xl font-bold text-slate-100">New Session</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-white">New Match</h1>
+          <p className="text-sm text-stone-400">Choose a team and line-up before scoring starts.</p>
+        </div>
       </div>
-      <NewSessionForm players={players} />
+      <NewSessionForm players={players} teams={teams} />
     </div>
   );
 }

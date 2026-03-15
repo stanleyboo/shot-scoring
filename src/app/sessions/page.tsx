@@ -1,14 +1,16 @@
 import Link from 'next/link';
 import { getDb, getAllSessions, getAllTeams } from '@/lib/db';
+import { isAdmin } from '@/lib/auth';
 import ExportAllButton from '@/components/ExportAllButton';
 import SessionListPage from '@/components/SessionListPage';
 
 export const dynamic = 'force-dynamic';
 
-export default function SessionsPage() {
+export default async function SessionsPage() {
   const db = getDb();
   const sessions = getAllSessions(db);
   const teams = getAllTeams(db);
+  const admin = await isAdmin();
 
   return (
     <div className="space-y-6">
@@ -36,7 +38,7 @@ export default function SessionsPage() {
           </Link>
         </div>
       ) : (
-        <SessionListPage sessions={sessions} teams={teams} />
+        <SessionListPage sessions={sessions} teams={teams} isAdmin={admin} />
       )}
     </div>
   );

@@ -3,8 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import {
   getDb,
-  recordShot as dbRecord,
-  undoLastShot as dbUndo,
+  recordStatEvent as dbRecord,
+  undoLastStatEvent as dbUndo,
 } from '@/lib/db';
 import { canEdit } from '@/lib/auth';
 
@@ -12,20 +12,23 @@ async function requireCanEdit() {
   if (!(await canEdit())) throw new Error('Unauthorized');
 }
 
-export async function recordShot(
+export async function recordStatEvent(
   sessionId: number,
   playerId: number,
-  scored: boolean,
+  statTypeId: number,
   quarter: number = 1
 ) {
   await requireCanEdit();
-  const shot = dbRecord(getDb(), sessionId, playerId, scored, quarter);
+  dbRecord(getDb(), sessionId, playerId, statTypeId, quarter);
   revalidatePath(`/sessions/${sessionId}`);
-  return shot;
 }
 
-export async function undoLastShot(sessionId: number, playerId: number) {
+export async function undoLastStatEvent(
+  sessionId: number,
+  playerId: number,
+  statTypeId: number
+) {
   await requireCanEdit();
-  dbUndo(getDb(), sessionId, playerId);
+  dbUndo(getDb(), sessionId, playerId, statTypeId);
   revalidatePath(`/sessions/${sessionId}`);
 }

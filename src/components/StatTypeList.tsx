@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { deleteStatType, renameStatType } from '@/actions/stat-types';
+import { deleteStatType, renameStatType, toggleStatType } from '@/actions/stat-types';
 import ConfirmModal from './ConfirmModal';
 import type { StatType } from '@/lib/db';
 
@@ -34,19 +34,12 @@ export default function StatTypeList({ statTypes }: { statTypes: StatType[] }) {
     });
   }
 
-  function handleDelete(id: number, name: string) {
-    setDeleteTarget({ id, name });
-  }
-
-  function confirmDelete() {
-    if (!deleteTarget) return;
-    const { id } = deleteTarget;
-    setDeleteTarget(null);
+  function handleToggle(id: number) {
     startTransition(async () => {
       try {
-        await deleteStatType(id);
+        await toggleStatType(id);
       } catch (err) {
-        alert(err instanceof Error ? err.message : 'Failed to delete');
+        alert(err instanceof Error ? err.message : 'Failed to toggle');
       }
     });
   }
@@ -91,11 +84,29 @@ export default function StatTypeList({ statTypes }: { statTypes: StatType[] }) {
               </button>
             </form>
           ) : (
-            <span className="font-medium text-stone-50 truncate">{st.name}</span>
+            <div className="flex items-center gap-2 min-w-0">
+              <span className={`font-medium truncate ${st.enabled ? 'text-stone-50' : 'text-stone-500 line-through'}`}>
+                {st.name}
+              </span>
+              {!st.enabled && (
+                <span className="text-[10px] uppercase tracking-wide text-stone-600">disabled</span>
+              )}
+            </div>
           )}
 
           {editingId !== st.id && (
             <div className="flex items-center gap-3 flex-shrink-0">
+              <button
+                onClick={() => handleToggle(st.id)}
+                disabled={isPending}
+                className={`relative h-6 w-10 rounded-full transition-colors flex-shrink-0 ${
+                  st.enabled ? 'bg-yellow-400' : 'bg-stone-700'
+                } disabled:opacity-50`}
+              >
+                <span className={`absolute top-0.5 h-5 w-5 rounded-full ${st.enabled ? 'bg-black' : 'bg-white'} transition-transform ${
+                  st.enabled ? 'left-[18px]' : 'left-0.5'
+                }`} />
+              </button>
               <button
                 onClick={() => startEditing(st)}
                 disabled={isPending}
@@ -104,7 +115,7 @@ export default function StatTypeList({ statTypes }: { statTypes: StatType[] }) {
                 Rename
               </button>
               <button
-                onClick={() => handleDelete(st.id, st.name)}
+                onClick={() => setDeleteTarget({ id: st.id, name: st.name })}
                 disabled={isPending}
                 className="text-sm text-stone-600 hover:text-red-400 disabled:opacity-40 transition-colors"
               >
@@ -117,10 +128,21 @@ export default function StatTypeList({ statTypes }: { statTypes: StatType[] }) {
       <ConfirmModal
         open={deleteTarget !== null}
         title="Delete Stat Type"
-        message={`Delete "${deleteTarget?.name ?? ''}"? This will remove all recorded events of this type.`}
+        message={`Delete "${deleteTarget?.name ?? ''}"? All recorded events of this type will be removed.`}
         confirmLabel="Delete"
         variant="danger"
-        onConfirm={confirmDelete}
+        onConfirm={() => {
+          if (!deleteTarget) return;
+          const { id } = deleteTarget;
+          setDeleteTarget(null);
+          startTransition(async () => {
+            try {
+              await deleteStatType(id);
+            } catch (err) {
+              alert(err instanceof Error ? err.message : 'Failed to delete');
+            }
+          });
+        }}
         onCancel={() => setDeleteTarget(null)}
       />
     </ul>

@@ -1,6 +1,7 @@
+import React from 'react';
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
-import { getDb, getSessionWithStats, getAllStatTypes, getAllTeams } from '@/lib/db';
+import { getDb, getSessionWithStats, getAllStatTypes, getAllTeams, getSessionQuarterBreakdown, getPlayerQuarterBreakdown } from '@/lib/db';
 import { isAdmin, canEdit } from '@/lib/auth';
 import RenameSessionForm from '@/components/RenameSessionForm';
 import DeleteSessionButton from '@/components/DeleteSessionButton';
@@ -8,6 +9,7 @@ import ReopenSessionButton from '@/components/ReopenSessionButton';
 import SessionTeamForm from '@/components/SessionTeamForm';
 import Breadcrumb from '@/components/Breadcrumb';
 import ExportButton from '@/components/ExportButton';
+import RemovePlayerButton from '@/components/RemovePlayerButton';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -38,8 +40,10 @@ export default async function SessionSummaryPage({ params }: Props) {
   if (!data.session.ended_at) redirect(`/sessions/${sessionId}`);
 
   const { session, players } = data;
-  const statTypes = getAllStatTypes(db);
+  const statTypes = getAllStatTypes(db, true);
   const teams = getAllTeams(db);
+  const quarters = getSessionQuarterBreakdown(db, sessionId);
+  const playerQuarters = getPlayerQuarterBreakdown(db, sessionId);
   const admin = await isAdmin();
   const editor = await canEdit();
 
@@ -88,6 +92,7 @@ export default async function SessionSummaryPage({ params }: Props) {
                   {st.name}
                 </th>
               ))}
+              {admin && <th className="px-2 py-3 w-8" />}
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-800">
@@ -111,6 +116,15 @@ export default async function SessionSummaryPage({ params }: Props) {
                     {p.stat_counts[st.id] ?? 0}
                   </td>
                 ))}
+                {admin && (
+                  <td className="px-2 py-3 text-center">
+                    <RemovePlayerButton
+                      sessionId={sessionId}
+                      playerId={p.player_id}
+                      playerName={p.name}
+                    />
+                  </td>
+                )}
               </tr>
             ))}
             <tr className="bg-[#111] font-semibold">
@@ -125,6 +139,7 @@ export default async function SessionSummaryPage({ params }: Props) {
                   {sectionStatTotals[st.id]}
                 </td>
               ))}
+              {admin && <td />}
             </tr>
           </tbody>
         </table>
@@ -181,12 +196,140 @@ export default async function SessionSummaryPage({ params }: Props) {
         </div>
       )}
 
+      {quarters.length > 1 && (
+        <div className="rounded-lg border border-stone-800 overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-[#111]">
+              <tr>
+                <th className="px-4 py-3 text-left text-sm font-medium text-stone-400 uppercase tracking-wide">Quarter</th>
+                <th className="px-4 py-3 text-right text-sm font-medium text-stone-400 uppercase tracking-wide">{session.team_name}</th>
+                <th className="px-4 py-3 text-right text-sm font-medium text-stone-400 uppercase tracking-wide">Opp</th>
+                <th className="px-4 py-3 text-right text-sm font-medium text-stone-400 uppercase tracking-wide">%</th>
+                {activeStatTypes.map(st => (
+                  <th key={st.id} className="px-4 py-3 text-right text-sm font-medium text-stone-400 uppercase tracking-wide">
+                    {st.name}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-stone-800">
+              {quarters.map(q => (
+                <tr key={q.quarter} className="bg-black/30">
+                  <td className="px-4 py-3 font-medium text-stone-300">Q{q.quarter}</td>
+                  <td className="px-4 py-3 text-right text-yellow-300">{q.home_made}</td>
+                  <td className="px-4 py-3 text-right text-stone-300">{q.opp_made}</td>
+                  <td className={`px-4 py-3 text-right ${pctColor(q.home_made, q.home_attempted)}`}>
+                    {pct(q.home_made, q.home_attempted)}
+                  </td>
+                  {activeStatTypes.map(st => (
+                    <td key={st.id} className="px-4 py-3 text-right text-yellow-300">
+                      {q.stat_counts[st.id] ?? 0}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+              <tr className="bg-[#111] font-semibold">
+                <td className="px-4 py-3 text-stone-300">Total</td>
+                <td className="px-4 py-3 text-right text-yellow-300">{teamMade}</td>
+                <td className="px-4 py-3 text-right text-stone-300">{oppTotal}</td>
+                <td className={`px-4 py-3 text-right ${pctColor(teamMade, teamAttempted)}`}>
+                  {pct(teamMade, teamAttempted)}
+                </td>
+                {activeStatTypes.map(st => (
+                  <td key={st.id} className="px-4 py-3 text-right text-yellow-300">
+                    {quarters.reduce((n, q) => n + (q.stat_counts[st.id] ?? 0), 0)}
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+
       {renderPlayerTable(
         homePlayers,
         'Total',
         teamMade,
         teamAttempted,
       )}
+
+      {quarters.length > 1 && playerQuarters.length > 0 && (() => {
+        const playerIds = [...new Set(playerQuarters.map(pq => pq.player_id))];
+        const qNums = [...new Set(playerQuarters.map(pq => pq.quarter))].sort();
+        return (
+          <div className="space-y-3">
+            <h2 className="text-sm font-medium uppercase tracking-wider text-stone-500">Per Quarter</h2>
+            <div className="rounded-lg border border-stone-800 overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-[#111]">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-stone-400 uppercase tracking-wide">Player</th>
+                    {qNums.map(q => (
+                      <th key={`q${q}-h`} colSpan={2 + activeStatTypes.length} className="px-4 py-3 text-center text-sm font-medium text-stone-400 uppercase tracking-wide border-l border-stone-800">
+                        Q{q}
+                      </th>
+                    ))}
+                  </tr>
+                  <tr>
+                    <th className="px-3 py-2" />
+                    {qNums.map(q => (
+                      <React.Fragment key={`sub-${q}`}>
+                        <th className="px-3 py-2 text-right text-xs text-stone-500 border-l border-stone-800">Goals</th>
+                        <th className="px-3 py-2 text-right text-xs text-stone-500">%</th>
+                        {activeStatTypes.map(st => (
+                          <th key={`${q}-${st.id}`} className="px-3 py-2 text-right text-xs text-stone-500">{st.name}</th>
+                        ))}
+                      </React.Fragment>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-800">
+                  {playerIds.map(pid => {
+                    const pRows = playerQuarters.filter(pq => pq.player_id === pid);
+                    const playerName = pRows[0]?.name ?? '';
+                    return (
+                      <tr key={pid} className="bg-black/30 hover:bg-[#111] transition-colors">
+                        <td className="px-4 py-3">
+                          <Link href={`/players/${pid}`} className="font-medium text-stone-50 hover:text-yellow-300 transition-colors">
+                            {playerName}
+                          </Link>
+                        </td>
+                        {qNums.map(q => {
+                          const qData = pRows.find(r => r.quarter === q);
+                          return (
+                            <React.Fragment key={`${pid}-${q}`}>
+                              <td className="px-3 py-3 text-right border-l border-stone-800">
+                                {qData ? (
+                                  <>
+                                    <span className="text-yellow-300">{qData.made}</span>
+                                    {qData.attempted > 0 && (
+                                      <span className="text-stone-500 text-xs ml-1">/{qData.attempted}</span>
+                                    )}
+                                  </>
+                                ) : (
+                                  <span className="text-stone-700">-</span>
+                                )}
+                              </td>
+                              <td className={`px-3 py-3 text-right ${qData ? pctColor(qData.made, qData.attempted) : 'text-stone-700'}`}>
+                                {qData ? pct(qData.made, qData.attempted) : '-'}
+                              </td>
+                              {activeStatTypes.map(st => (
+                                <td key={`${pid}-${q}-${st.id}`} className="px-3 py-3 text-right text-yellow-300">
+                                  {qData ? (qData.stat_counts[st.id] ?? 0) : <span className="text-stone-700">-</span>}
+                                </td>
+                              ))}
+                            </React.Fragment>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })()}
 
       {oppPlayers.length > 0 && (
         <>

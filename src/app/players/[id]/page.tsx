@@ -23,7 +23,7 @@ export default async function PlayerProfilePage({ params }: Props) {
   if (!player) notFound();
 
   const stats = getPlayerCareerStats(db, playerId);
-  const statTypes = getAllStatTypes(db);
+  const statTypes = getAllStatTypes(db, true);
 
   // Only show stat types the player has recorded at least once
   const activeStatTypes = statTypes.filter(st => (stats.career_stat_counts[st.id] ?? 0) > 0);

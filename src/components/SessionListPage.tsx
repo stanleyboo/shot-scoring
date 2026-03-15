@@ -11,9 +11,10 @@ type SessionRow = Session & { total_shots: number; player_count: number };
 interface Props {
   sessions: SessionRow[];
   teams: Team[];
+  isAdmin?: boolean;
 }
 
-export default function SessionListPage({ sessions, teams }: Props) {
+export default function SessionListPage({ sessions, teams, isAdmin: admin }: Props) {
   const [search, setSearch] = useState('');
   const [teamFilter, setTeamFilter] = useState('');
 
@@ -98,9 +99,11 @@ export default function SessionListPage({ sessions, teams }: Props) {
                           <p className="text-xs text-stone-500">{session.player_count} players</p>
                         </div>
                       </Link>
-                      <div className="pr-2">
-                        <DeleteSessionButton sessionId={session.id} />
-                      </div>
+                      {admin && (
+                        <div className="pr-2">
+                          <DeleteSessionButton sessionId={session.id} />
+                        </div>
+                      )}
                     </li>
                   );
                 })}

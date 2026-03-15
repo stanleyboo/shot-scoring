@@ -37,7 +37,7 @@ export default async function TeamPage({ params }: Props) {
   const sessions = getAllSessions(db, teamId);
   const results = getMatchResults(db, teamId);
   const leaderboards = getAllLeaderboards(db, teamId);
-  const statTypes = getAllStatTypes(db);
+  const statTypes = getAllStatTypes(db, true);
 
   return (
     <div className="space-y-8">

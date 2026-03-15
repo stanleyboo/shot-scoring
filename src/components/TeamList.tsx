@@ -2,11 +2,13 @@
 
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
-import { renameTeam } from '@/actions/teams';
+import { renameTeam, deleteTeam } from '@/actions/teams';
+import ConfirmModal from './ConfirmModal';
 import type { TeamSummary } from '@/lib/db';
 
 export default function TeamList({ teams }: { teams: TeamSummary[] }) {
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [name, setName] = useState('');
   const [isPending, startTransition] = useTransition();
 
@@ -100,18 +102,47 @@ export default function TeamList({ teams }: { teams: TeamSummary[] }) {
                 Open Team
               </Link>
               {editingId !== team.id && (
-                <button
-                  onClick={() => startEditing(team)}
-                  disabled={isPending}
-                  className="border border-stone-800 rounded-lg px-3 py-2 text-sm font-black uppercase tracking-wide text-stone-300 hover:border-yellow-400 hover:text-yellow-300"
-                >
-                  Rename Team
-                </button>
+                <>
+                  <button
+                    onClick={() => startEditing(team)}
+                    disabled={isPending}
+                    className="border border-stone-800 rounded-lg px-3 py-2 text-sm font-black uppercase tracking-wide text-stone-300 hover:border-yellow-400 hover:text-yellow-300"
+                  >
+                    Rename
+                  </button>
+                  <button
+                    onClick={() => setDeletingId(team.id)}
+                    disabled={isPending}
+                    className="border border-red-900/50 rounded-lg px-3 py-2 text-sm font-black uppercase tracking-wide text-red-400 hover:border-red-500 hover:text-red-300 transition-all"
+                  >
+                    Delete
+                  </button>
+                </>
               )}
             </div>
           </div>
         );
       })}
+      <ConfirmModal
+        open={deletingId !== null}
+        title="Delete Team"
+        message="Delete this team? All players and match history associated with this team will be removed."
+        confirmLabel="Delete Team"
+        variant="danger"
+        onConfirm={() => {
+          if (deletingId === null) return;
+          const id = deletingId;
+          setDeletingId(null);
+          startTransition(async () => {
+            try {
+              await deleteTeam(id);
+            } catch (err) {
+              alert(err instanceof Error ? err.message : 'Failed to delete team');
+            }
+          });
+        }}
+        onCancel={() => setDeletingId(null)}
+      />
     </div>
   );
 }

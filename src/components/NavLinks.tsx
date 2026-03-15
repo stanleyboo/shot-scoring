@@ -10,7 +10,9 @@ interface Props {
 const links = [
   { href: '/sessions', label: 'Matches' },
   { href: '/players', label: 'Players' },
+  { href: '/teams', label: 'Teams' },
   { href: '/stats', label: 'Stats' },
+  { href: '/feedback', label: 'Feedback' },
 ];
 
 export default function NavLinks({ isAdmin }: Props) {
@@ -22,7 +24,7 @@ export default function NavLinks({ isAdmin }: Props) {
   }
 
   return (
-    <div className="flex gap-5 text-sm">
+    <div className="flex gap-3 sm:gap-5 text-xs sm:text-sm overflow-x-auto">
       {links.map(link => (
         <Link
           key={link.href}

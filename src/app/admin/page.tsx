@@ -1,18 +1,23 @@
 import { redirect } from 'next/navigation';
 import { isAdmin, getSettings } from '@/lib/auth';
-import { getDb, getTeamSummaries } from '@/lib/db';
+import { getDb, getDeletedSessions, getDeletedPlayers, getDeletedTeams, getAllFeedback } from '@/lib/db';
 import AdminSettings from '@/components/AdminSettings';
 import LogoutButton from '@/components/LogoutButton';
-import AddTeamForm from '@/components/AddTeamForm';
-import TeamList from '@/components/TeamList';
+import RecoveryPanel from '@/components/RecoveryPanel';
+import AdminFeedback from '@/components/AdminFeedback';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminPage() {
   if (!(await isAdmin())) redirect('/login');
 
+  const db = getDb();
   const settings = getSettings();
-  const teams = getTeamSummaries(getDb());
+  const deletedSessions = getDeletedSessions(db);
+  const deletedPlayers = getDeletedPlayers(db);
+  const deletedTeams = getDeletedTeams(db);
+  const feedback = getAllFeedback(db);
+  const unreadCount = feedback.filter(f => !f.read).length;
 
   return (
     <div className="space-y-8">
@@ -24,9 +29,20 @@ export default async function AdminPage() {
       <AdminSettings settings={settings} />
 
       <section className="space-y-4">
-        <h2 className="text-xl font-bold text-yellow-300">Team Setup</h2>
-        <AddTeamForm />
-        <TeamList teams={teams} />
+        <h2 className="text-xl font-bold text-yellow-300">
+          Feedback {unreadCount > 0 && <span className="text-sm text-stone-400">({unreadCount} new)</span>}
+        </h2>
+        <AdminFeedback feedback={feedback} />
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-xl font-bold text-yellow-300">Recovery</h2>
+        <p className="text-sm text-stone-400">Restore recently deleted matches, players, or teams.</p>
+        <RecoveryPanel
+          sessions={deletedSessions}
+          players={deletedPlayers}
+          teams={deletedTeams}
+        />
       </section>
     </div>
   );

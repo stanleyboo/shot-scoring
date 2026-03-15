@@ -41,6 +41,7 @@ export interface Shot {
 export interface StatType {
   id: number;
   name: string;
+  enabled: number;
   created_at: string;
 }
 
@@ -178,6 +179,14 @@ export function applySchema(db: Database.Database): void {
       key   TEXT PRIMARY KEY,
       value TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS feedback (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      name       TEXT NOT NULL,
+      message    TEXT NOT NULL,
+      read       INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `);
 
   db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('public_can_create', '1')").run();
@@ -211,6 +220,37 @@ export function applySchema(db: Database.Database): void {
   const playerColsCheck = db.pragma('table_info(players)') as { name: string }[];
   if (!playerColsCheck.some(col => col.name === 'archived_at')) {
     db.exec('ALTER TABLE players ADD COLUMN archived_at TEXT');
+  }
+
+  const shotColsCheck = db.pragma('table_info(shots)') as { name: string }[];
+  if (!shotColsCheck.some(col => col.name === 'quarter')) {
+    db.exec('ALTER TABLE shots ADD COLUMN quarter INTEGER NOT NULL DEFAULT 1');
+  }
+
+  const statEventColsCheck = db.pragma('table_info(stat_events)') as { name: string }[];
+  if (!statEventColsCheck.some(col => col.name === 'quarter')) {
+    db.exec('ALTER TABLE stat_events ADD COLUMN quarter INTEGER NOT NULL DEFAULT 1');
+  }
+
+  // Soft-delete columns
+  const sessionColsCheck2 = db.pragma('table_info(sessions)') as { name: string }[];
+  if (!sessionColsCheck2.some(col => col.name === 'deleted_at')) {
+    db.exec('ALTER TABLE sessions ADD COLUMN deleted_at TEXT');
+  }
+
+  const playerColsCheck2 = db.pragma('table_info(players)') as { name: string }[];
+  if (!playerColsCheck2.some(col => col.name === 'deleted_at')) {
+    db.exec('ALTER TABLE players ADD COLUMN deleted_at TEXT');
+  }
+
+  const teamColsCheck = db.pragma('table_info(teams)') as { name: string }[];
+  if (!teamColsCheck.some(col => col.name === 'deleted_at')) {
+    db.exec('ALTER TABLE teams ADD COLUMN deleted_at TEXT');
+  }
+
+  const statTypeCols = db.pragma('table_info(stat_types)') as { name: string }[];
+  if (!statTypeCols.some(col => col.name === 'enabled')) {
+    db.exec('ALTER TABLE stat_types ADD COLUMN enabled INTEGER NOT NULL DEFAULT 1');
   }
 
   db.prepare('UPDATE players SET team_id = ? WHERE team_id IS NULL').run(defaultTeamId);
@@ -258,6 +298,15 @@ export function createTeam(db: Database.Database, name: string): Team {
   return db.prepare('INSERT INTO teams (name) VALUES (?) RETURNING *').get(trimmed) as Team;
 }
 
+export function deleteTeam(db: Database.Database, teamId: number): void {
+  const playerCount = (db.prepare('SELECT COUNT(*) AS cnt FROM players WHERE team_id = ?').get(teamId) as { cnt: number }).cnt;
+  if (playerCount > 0) throw new Error('Cannot delete a team that has players. Move or archive them first.');
+  const sessionCount = (db.prepare('SELECT COUNT(*) AS cnt FROM sessions WHERE team_id = ?').get(teamId) as { cnt: number }).cnt;
+  if (sessionCount > 0) throw new Error('Cannot delete a team that has match history.');
+  const result = db.prepare('DELETE FROM teams WHERE id = ?').run(teamId);
+  if (result.changes === 0) throw new Error(`Team ${teamId} not found`);
+}
+
 export function renameTeam(db: Database.Database, teamId: number, name: string): void {
   const trimmed = name.trim();
   if (!trimmed) throw new Error('Team name cannot be empty');
@@ -266,7 +315,7 @@ export function renameTeam(db: Database.Database, teamId: number, name: string):
 }
 
 export function getAllTeams(db: Database.Database): Team[] {
-  return db.prepare('SELECT * FROM teams ORDER BY name ASC').all() as Team[];
+  return db.prepare('SELECT * FROM teams WHERE deleted_at IS NULL ORDER BY name ASC').all() as Team[];
 }
 
 export function getTeamById(db: Database.Database, teamId: number): Team | null {
@@ -325,10 +374,10 @@ export function createPlayer(db: Database.Database, name: string, teamId: number
 }
 
 export function getAllPlayers(db: Database.Database, teamId?: number, includeArchived = false): Player[] {
-  const conditions: string[] = [];
+  const conditions: string[] = ['p.deleted_at IS NULL'];
   if (!includeArchived) conditions.push('p.archived_at IS NULL');
   if (teamId) conditions.push('p.team_id = @teamId');
-  const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+  const where = `WHERE ${conditions.join(' AND ')}`;
   return db
     .prepare(
       `SELECT p.*, t.name AS team_name
@@ -341,7 +390,7 @@ export function getAllPlayers(db: Database.Database, teamId?: number, includeArc
 }
 
 export function getAllPlayersWithShots(db: Database.Database, includeArchived = false): (Player & { total_shots: number; team_name: string })[] {
-  const where = includeArchived ? '' : 'WHERE p.archived_at IS NULL';
+  const where = includeArchived ? 'WHERE p.deleted_at IS NULL' : 'WHERE p.archived_at IS NULL AND p.deleted_at IS NULL';
   return db.prepare(
     `SELECT
        p.*,
@@ -453,7 +502,7 @@ export function getActiveSession(db: Database.Database): Session | null {
         `SELECT s.*, t.name AS team_name
          FROM sessions s
          JOIN teams t ON t.id = s.team_id
-         WHERE s.ended_at IS NULL
+         WHERE s.ended_at IS NULL AND s.deleted_at IS NULL
          ORDER BY s.started_at DESC, s.id DESC
          LIMIT 1`
       )
@@ -476,7 +525,7 @@ export function getAllSessions(
        JOIN teams t ON t.id = s.team_id
        LEFT JOIN session_players sp ON sp.session_id = s.id
        LEFT JOIN shots sh ON sh.session_id = s.id AND sh.player_id = sp.player_id
-       ${teamId ? 'WHERE s.team_id = @teamId' : ''}
+       WHERE s.deleted_at IS NULL${teamId ? ' AND s.team_id = @teamId' : ''}
        GROUP BY s.id
        ORDER BY s.started_at DESC, s.id DESC`
     )
@@ -559,6 +608,109 @@ export function updateSessionTeam(db: Database.Database, sessionId: number, team
   if (result.changes === 0) throw new Error(`Session ${sessionId} not found`);
 }
 
+export function removePlayerFromSession(db: Database.Database, sessionId: number, playerId: number): void {
+  const run = db.transaction(() => {
+    db.prepare('DELETE FROM shots WHERE session_id = ? AND player_id = ?').run(sessionId, playerId);
+    db.prepare('DELETE FROM stat_events WHERE session_id = ? AND player_id = ?').run(sessionId, playerId);
+    const result = db.prepare('DELETE FROM session_players WHERE session_id = ? AND player_id = ?').run(sessionId, playerId);
+    if (result.changes === 0) throw new Error('Player not in this session');
+  });
+  run();
+}
+
+export interface QuarterBreakdown {
+  quarter: number;
+  home_made: number;
+  home_attempted: number;
+  opp_made: number;
+  opp_attempted: number;
+  stat_counts: Record<number, number>;
+}
+
+export function getSessionQuarterBreakdown(db: Database.Database, sessionId: number): QuarterBreakdown[] {
+  const shotRows = db.prepare(
+    `SELECT
+       sh.quarter,
+       COALESCE(SUM(CASE WHEN sp.is_opposition = 0 AND sh.scored = 1 THEN 1 ELSE 0 END), 0) AS home_made,
+       COALESCE(SUM(CASE WHEN sp.is_opposition = 0 THEN 1 ELSE 0 END), 0) AS home_attempted,
+       COALESCE(SUM(CASE WHEN sp.is_opposition = 1 AND sh.scored = 1 THEN 1 ELSE 0 END), 0) AS opp_made,
+       COALESCE(SUM(CASE WHEN sp.is_opposition = 1 THEN 1 ELSE 0 END), 0) AS opp_attempted
+     FROM shots sh
+     JOIN session_players sp ON sp.session_id = sh.session_id AND sp.player_id = sh.player_id
+     WHERE sh.session_id = ?
+     GROUP BY sh.quarter
+     ORDER BY sh.quarter`
+  ).all(sessionId) as { quarter: number; home_made: number; home_attempted: number; opp_made: number; opp_attempted: number }[];
+
+  const statRows = db.prepare(
+    `SELECT se.quarter, se.stat_type_id, COUNT(*) AS cnt
+     FROM stat_events se
+     JOIN stat_types st ON st.id = se.stat_type_id AND st.enabled = 1
+     WHERE se.session_id = ?
+     GROUP BY se.quarter, se.stat_type_id`
+  ).all(sessionId) as { quarter: number; stat_type_id: number; cnt: number }[];
+
+  const statMap = new Map<number, Record<number, number>>();
+  for (const row of statRows) {
+    const qStats = statMap.get(row.quarter) ?? {};
+    qStats[row.stat_type_id] = row.cnt;
+    statMap.set(row.quarter, qStats);
+  }
+
+  return shotRows.map(row => ({
+    ...row,
+    stat_counts: statMap.get(row.quarter) ?? {},
+  }));
+}
+
+export interface PlayerQuarterStats {
+  player_id: number;
+  name: string;
+  quarter: number;
+  made: number;
+  attempted: number;
+  stat_counts: Record<number, number>;
+}
+
+export function getPlayerQuarterBreakdown(db: Database.Database, sessionId: number): PlayerQuarterStats[] {
+  const shotRows = db.prepare(
+    `SELECT
+       sp.player_id,
+       p.name,
+       sh.quarter,
+       COALESCE(SUM(CASE WHEN sh.scored = 1 THEN 1 ELSE 0 END), 0) AS made,
+       COUNT(sh.id) AS attempted
+     FROM session_players sp
+     JOIN players p ON p.id = sp.player_id
+     JOIN shots sh ON sh.session_id = sp.session_id AND sh.player_id = sp.player_id
+     WHERE sp.session_id = ? AND sp.is_opposition = 0
+     GROUP BY sp.player_id, sh.quarter
+     ORDER BY p.name ASC, sh.quarter ASC`
+  ).all(sessionId) as { player_id: number; name: string; quarter: number; made: number; attempted: number }[];
+
+  const statRows = db.prepare(
+    `SELECT se.player_id, se.quarter, se.stat_type_id, COUNT(*) AS cnt
+     FROM stat_events se
+     JOIN session_players sp ON sp.session_id = se.session_id AND sp.player_id = se.player_id
+     JOIN stat_types st ON st.id = se.stat_type_id AND st.enabled = 1
+     WHERE se.session_id = ? AND sp.is_opposition = 0
+     GROUP BY se.player_id, se.quarter, se.stat_type_id`
+  ).all(sessionId) as { player_id: number; quarter: number; stat_type_id: number; cnt: number }[];
+
+  const statMap = new Map<string, Record<number, number>>();
+  for (const row of statRows) {
+    const key = `${row.player_id}-${row.quarter}`;
+    const entry = statMap.get(key) ?? {};
+    entry[row.stat_type_id] = row.cnt;
+    statMap.set(key, entry);
+  }
+
+  return shotRows.map(row => ({
+    ...row,
+    stat_counts: statMap.get(`${row.player_id}-${row.quarter}`) ?? {},
+  }));
+}
+
 export function togglePlayerOpposition(db: Database.Database, sessionId: number, playerId: number): void {
   db.prepare(
     `UPDATE session_players
@@ -583,13 +735,14 @@ export function recordShot(
   db: Database.Database,
   sessionId: number,
   playerId: number,
-  scored: boolean
+  scored: boolean,
+  quarter: number = 1
 ): Shot {
   return db
     .prepare(
-      'INSERT INTO shots (session_id, player_id, scored) VALUES (?, ?, ?) RETURNING *'
+      'INSERT INTO shots (session_id, player_id, scored, quarter) VALUES (?, ?, ?, ?) RETURNING *'
     )
-    .get(sessionId, playerId, scored ? 1 : 0) as Shot;
+    .get(sessionId, playerId, scored ? 1 : 0, quarter) as Shot;
 }
 
 export function undoLastShot(db: Database.Database, sessionId: number, playerId: number): void {
@@ -701,8 +854,14 @@ export function createStatType(db: Database.Database, name: string): StatType {
   return db.prepare('INSERT INTO stat_types (name) VALUES (?) RETURNING *').get(trimmed) as StatType;
 }
 
-export function getAllStatTypes(db: Database.Database): StatType[] {
-  return db.prepare('SELECT * FROM stat_types ORDER BY name ASC').all() as StatType[];
+export function getAllStatTypes(db: Database.Database, enabledOnly = false): StatType[] {
+  const where = enabledOnly ? 'WHERE enabled = 1' : '';
+  return db.prepare(`SELECT * FROM stat_types ${where} ORDER BY name ASC`).all() as StatType[];
+}
+
+export function toggleStatType(db: Database.Database, id: number): void {
+  const result = db.prepare('UPDATE stat_types SET enabled = CASE WHEN enabled = 1 THEN 0 ELSE 1 END WHERE id = ?').run(id);
+  if (result.changes === 0) throw new Error(`Stat type ${id} not found`);
 }
 
 export function getAllLeaderboards(
@@ -810,7 +969,7 @@ export function getAllLeaderboards(
     career.push({ title: 'Best Shot %', subtitle: 'Min. 10 attempts', format: 'percent', entries: careerPct });
   }
 
-  const statTypes = getAllStatTypes(db);
+  const statTypes = getAllStatTypes(db, true);
   for (const statType of statTypes) {
     const matchStat = db
       .prepare(
@@ -911,11 +1070,93 @@ export function recordStatEvent(
   db: Database.Database,
   sessionId: number,
   playerId: number,
-  statTypeId: number
+  statTypeId: number,
+  quarter: number = 1
 ): void {
   db.prepare(
-    'INSERT INTO stat_events (session_id, player_id, stat_type_id) VALUES (?, ?, ?)'
-  ).run(sessionId, playerId, statTypeId);
+    'INSERT INTO stat_events (session_id, player_id, stat_type_id, quarter) VALUES (?, ?, ?, ?)'
+  ).run(sessionId, playerId, statTypeId, quarter);
+}
+
+// --- Feedback ---
+
+export interface Feedback {
+  id: number;
+  name: string;
+  message: string;
+  read: number;
+  created_at: string;
+}
+
+export function submitFeedback(db: Database.Database, name: string, message: string): Feedback {
+  const trimmedName = name.trim();
+  const trimmedMessage = message.trim();
+  if (!trimmedName) throw new Error('Name cannot be empty');
+  if (!trimmedMessage) throw new Error('Message cannot be empty');
+  return db.prepare('INSERT INTO feedback (name, message) VALUES (?, ?) RETURNING *').get(trimmedName, trimmedMessage) as Feedback;
+}
+
+export function getAllFeedback(db: Database.Database): Feedback[] {
+  return db.prepare('SELECT * FROM feedback ORDER BY created_at DESC').all() as Feedback[];
+}
+
+export function markFeedbackRead(db: Database.Database, id: number): void {
+  db.prepare('UPDATE feedback SET read = 1 WHERE id = ?').run(id);
+}
+
+export function deleteFeedback(db: Database.Database, id: number): void {
+  db.prepare('DELETE FROM feedback WHERE id = ?').run(id);
+}
+
+// --- Soft-delete recovery ---
+
+export function softDeleteSession(db: Database.Database, sessionId: number): void {
+  const sessionCols = db.pragma('table_info(sessions)') as { name: string }[];
+  if (!sessionCols.some(col => col.name === 'deleted_at')) return;
+  const result = db.prepare("UPDATE sessions SET deleted_at = datetime('now') WHERE id = ? AND deleted_at IS NULL").run(sessionId);
+  if (result.changes === 0) throw new Error(`Session ${sessionId} not found`);
+}
+
+export function restoreSession(db: Database.Database, sessionId: number): void {
+  db.prepare('UPDATE sessions SET deleted_at = NULL WHERE id = ?').run(sessionId);
+}
+
+export function softDeletePlayer(db: Database.Database, playerId: number): void {
+  const playerCols = db.pragma('table_info(players)') as { name: string }[];
+  if (!playerCols.some(col => col.name === 'deleted_at')) return;
+  const result = db.prepare("UPDATE players SET deleted_at = datetime('now') WHERE id = ? AND deleted_at IS NULL").run(playerId);
+  if (result.changes === 0) throw new Error(`Player ${playerId} not found`);
+}
+
+export function restorePlayer(db: Database.Database, playerId: number): void {
+  db.prepare('UPDATE players SET deleted_at = NULL WHERE id = ?').run(playerId);
+}
+
+export function softDeleteTeam(db: Database.Database, teamId: number): void {
+  const teamCols = db.pragma('table_info(teams)') as { name: string }[];
+  if (!teamCols.some(col => col.name === 'deleted_at')) return;
+  const result = db.prepare("UPDATE teams SET deleted_at = datetime('now') WHERE id = ? AND deleted_at IS NULL").run(teamId);
+  if (result.changes === 0) throw new Error(`Team ${teamId} not found`);
+}
+
+export function restoreTeam(db: Database.Database, teamId: number): void {
+  db.prepare('UPDATE teams SET deleted_at = NULL WHERE id = ?').run(teamId);
+}
+
+export function getDeletedSessions(db: Database.Database): Session[] {
+  return db.prepare(
+    `SELECT s.*, t.name AS team_name FROM sessions s JOIN teams t ON t.id = s.team_id WHERE s.deleted_at IS NOT NULL ORDER BY s.deleted_at DESC`
+  ).all() as Session[];
+}
+
+export function getDeletedPlayers(db: Database.Database): Player[] {
+  return db.prepare(
+    `SELECT p.*, t.name AS team_name FROM players p JOIN teams t ON t.id = p.team_id WHERE p.deleted_at IS NOT NULL ORDER BY p.deleted_at DESC`
+  ).all() as Player[];
+}
+
+export function getDeletedTeams(db: Database.Database): Team[] {
+  return db.prepare('SELECT * FROM teams WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC').all() as Team[];
 }
 
 export function undoLastStatEvent(

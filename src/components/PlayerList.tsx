@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
-import { archivePlayer, deletePlayer, movePlayerTeam, renamePlayer } from '@/actions/players';
+import { deletePlayer, movePlayerTeam, renamePlayer } from '@/actions/players';
 import ConfirmModal from './ConfirmModal';
 import type { Player, Team } from '@/lib/db';
 
@@ -167,31 +167,13 @@ export default function PlayerList({
                     >
                       Rename
                     </button>
-                    {player.total_shots > 0 ? (
-                      <button
-                        onClick={() => {
-                          startTransition(async () => {
-                            try {
-                              await archivePlayer(player.id);
-                            } catch (err) {
-                              alert(err instanceof Error ? err.message : 'Failed to archive');
-                            }
-                          });
-                        }}
-                        disabled={isPending}
-                        className="border border-stone-800 rounded-lg px-3 py-2 text-sm uppercase tracking-wide text-stone-400 transition hover:border-yellow-500 hover:text-yellow-300 disabled:opacity-40"
-                      >
-                        Archive
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleDelete(player.id, player.name, player.total_shots)}
-                        disabled={isPending}
-                        className="border border-stone-800 rounded-lg px-3 py-2 text-sm uppercase tracking-wide text-stone-400 transition hover:border-red-500 hover:text-red-400 disabled:opacity-40"
-                      >
-                        Delete
-                      </button>
-                    )}
+                    <button
+                      onClick={() => handleDelete(player.id, player.name, player.total_shots)}
+                      disabled={isPending}
+                      className="border border-stone-800 rounded-lg px-3 py-2 text-sm uppercase tracking-wide text-stone-400 transition hover:border-red-500 hover:text-red-400 disabled:opacity-40"
+                    >
+                      Delete
+                    </button>
                   </>
                 )}
               </div>
@@ -202,11 +184,7 @@ export default function PlayerList({
       <ConfirmModal
         open={deleteTarget !== null}
         title="Delete Player"
-        message={
-          deleteTarget?.shotCount
-            ? `Delete ${deleteTarget.name}? This will remove all their shot history across all sessions.`
-            : `Remove ${deleteTarget?.name ?? ''}?`
-        }
+        message={`Delete ${deleteTarget?.name ?? ''}? You can restore them from the Admin panel.`}
         confirmLabel="Delete"
         variant="danger"
         onConfirm={confirmDelete}
