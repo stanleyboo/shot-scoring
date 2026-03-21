@@ -1,49 +1,73 @@
-import type { SessionWithStats, StatType } from '@/lib/db';
+import type { SessionWithStats, StatType, NETBALL_POSITIONS } from '@/lib/db';
 
 type PlayerStats = SessionWithStats['players'][number];
 
 interface Props {
   player: PlayerStats;
   statTypes: StatType[];
+  currentQuarter: number;
   onShot: (playerId: number, scored: boolean) => void;
   onUndo: (playerId: number) => void;
   onStatEvent: (playerId: number, statTypeId: number) => void;
   onUndoStat: (playerId: number, statTypeId: number) => void;
   onToggleOpposition: (playerId: number) => void;
+  onSetPosition: (playerId: number, position: string | null) => void;
+  onToggleQuarter: (playerId: number, quarter: number) => void;
   isPending: boolean;
 }
+
+const POSITIONS: (typeof NETBALL_POSITIONS)[number][] = ['GS', 'GA', 'WA', 'C', 'WD', 'GD', 'GK'];
 
 export default function PlayerScoreCard({
   player,
   statTypes,
+  currentQuarter,
   onShot,
   onUndo,
   onStatEvent,
   onUndoStat,
   onToggleOpposition,
+  onSetPosition,
+  onToggleQuarter,
   isPending,
 }: Props) {
-  const { player_id, name, made, attempted, is_opposition, stat_counts } = player;
+  const { player_id, name, made, attempted, is_opposition, position, quarters_played, stat_counts } = player;
   const pct = attempted === 0 ? null : Math.round((made / attempted) * 100);
+  const qtrsCount = quarters_played.length;
+  const goalsPerQtr = qtrsCount > 0 ? (made / qtrsCount).toFixed(1) : null;
 
   const pctColor =
     pct === null
-      ? 'text-stone-600'
+      ? 'text-[var(--text-dim)]'
       : pct >= 70
-        ? 'text-yellow-300'
+        ? 'text-[var(--gold)]'
         : pct >= 50
           ? 'text-amber-300'
-          : 'text-red-400';
+          : 'text-[var(--red)]';
 
-  const borderColor = is_opposition ? 'border-red-800/60' : 'border-yellow-400/15';
+  const isOnCourt = quarters_played.includes(currentQuarter);
 
   return (
-    <div className={`rounded-2xl border ${borderColor} bg-black/60 p-3 space-y-2 lg:rounded-lg lg:p-1.5 lg:space-y-1`}>
+    <div className={`rounded border-l-3 ${is_opposition ? 'border-l-[var(--red)]' : 'border-l-[var(--gold)]'} border ${is_opposition ? 'border-[var(--red)]/40' : 'border-[var(--border-gold)]'} bg-black/60 p-3 space-y-2 lg:p-1.5 lg:space-y-1 ${!isOnCourt && qtrsCount > 0 ? 'opacity-50' : ''}`}>
       {/* Header row */}
       <div className="flex items-center justify-between gap-1">
-        <div className="flex items-baseline gap-2 min-w-0">
-          <h2 className="text-base font-bold text-white truncate sm:text-lg lg:text-sm">{name}</h2>
-          <p className="text-xs text-stone-500 flex-shrink-0">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <h2 className="text-base font-bold text-white truncate sm:text-lg lg:text-sm font-[family-name:var(--font-display)] uppercase">{name}</h2>
+          {/* Position picker */}
+          {!is_opposition && (
+            <select
+              value={position ?? ''}
+              onChange={e => onSetPosition(player_id, e.target.value || null)}
+              disabled={isPending}
+              className="bg-transparent border border-[var(--gold)]/20 rounded px-1 py-0.5 text-[10px] font-bold text-[var(--gold)] uppercase focus:outline-none focus:border-[var(--gold)] cursor-pointer min-w-[40px]"
+            >
+              <option value="">—</option>
+              {POSITIONS.map(pos => (
+                <option key={pos} value={pos}>{pos}</option>
+              ))}
+            </select>
+          )}
+          <p className="text-xs text-[var(--text-dim)] flex-shrink-0">
             {attempted === 0 ? '' : `${made}/${attempted}`}
           </p>
         </div>
@@ -52,33 +76,57 @@ export default function PlayerScoreCard({
             onClick={() => onToggleOpposition(player_id)}
             disabled={isPending}
             title={is_opposition ? 'Move to home team' : 'Mark as opposition'}
-            className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide transition-colors ${
+            className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide transition-colors ${
               is_opposition
-                ? 'bg-red-900/50 text-red-400 hover:bg-red-900/80'
-                : 'bg-yellow-400/10 text-stone-400 hover:text-yellow-300 hover:bg-yellow-400/15'
+                ? 'bg-[var(--red)]/20 text-[var(--red)] hover:bg-[var(--red)]/40'
+                : 'bg-[var(--gold)]/10 text-[var(--text-muted)] hover:text-[var(--gold)] hover:bg-[var(--gold)]/15'
             }`}
           >
             {is_opposition ? 'OPP' : 'Home'}
           </button>
-          <span className={`text-2xl font-black leading-none lg:text-xl ${pctColor}`}>
+          <span className={`text-2xl font-black leading-none lg:text-xl ${pctColor} font-[family-name:var(--font-display)]`}>
             {pct === null ? '—' : `${pct}%`}
           </span>
         </div>
       </div>
+
+      {/* Quarter participation toggles */}
+      {!is_opposition && (
+        <div className="flex items-center gap-1">
+          <span className="text-[9px] uppercase tracking-wide text-[var(--text-dim)] mr-1">Court:</span>
+          {[1, 2, 3, 4].map(q => (
+            <button
+              key={q}
+              onClick={() => onToggleQuarter(player_id, q)}
+              disabled={isPending}
+              className={`w-6 h-6 rounded text-[10px] font-bold transition-all lg:w-5 lg:h-5 lg:text-[9px] ${
+                quarters_played.includes(q)
+                  ? 'bg-[var(--gold)] text-black'
+                  : 'border border-[var(--border)] text-[var(--text-dim)] hover:border-[var(--gold)]'
+              }`}
+            >
+              {q}
+            </button>
+          ))}
+          {qtrsCount > 0 && goalsPerQtr !== null && (
+            <span className="text-[10px] text-[var(--text-dim)] ml-auto">{goalsPerQtr}/qtr</span>
+          )}
+        </div>
+      )}
 
       {/* Shot buttons */}
       <div className="flex gap-1.5 lg:gap-1">
         <button
           onClick={() => onShot(player_id, true)}
           disabled={isPending}
-          className="flex-1 rounded-xl bg-yellow-400 py-3 text-sm font-black text-black hover:bg-yellow-300 active:scale-95 disabled:opacity-50 transition-all min-h-[44px] sm:text-base lg:rounded-md lg:py-1 lg:text-[11px] lg:min-h-0"
+          className="flex-1 rounded bg-[var(--gold)] py-3 text-sm font-black text-black hover:bg-[var(--gold-hover)] active:scale-95 disabled:opacity-50 transition-all min-h-[44px] sm:text-base lg:py-1 lg:text-[11px] lg:min-h-0"
         >
           SCORED
         </button>
         <button
           onClick={() => onShot(player_id, false)}
           disabled={isPending}
-          className="flex-1 rounded-xl bg-red-600 py-3 text-sm font-black text-white hover:bg-red-500 active:scale-95 disabled:opacity-50 transition-all min-h-[44px] sm:text-base lg:rounded-md lg:py-1 lg:text-[11px] lg:min-h-0"
+          className="flex-1 rounded bg-[var(--red)] py-3 text-sm font-black text-white hover:bg-[var(--red-hover)] active:scale-95 disabled:opacity-50 transition-all min-h-[44px] sm:text-base lg:py-1 lg:text-[11px] lg:min-h-0"
         >
           MISSED
         </button>
@@ -86,7 +134,7 @@ export default function PlayerScoreCard({
           onClick={() => onUndo(player_id)}
           disabled={isPending || attempted === 0}
           title="Undo last shot"
-          className="rounded-xl border border-yellow-400/15 bg-black px-2.5 py-3 text-base text-stone-300 hover:bg-black/80 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 transition-all min-h-[44px] lg:rounded-md lg:px-1.5 lg:py-1 lg:text-xs lg:min-h-0"
+          className="rounded border border-[var(--border-gold)] bg-black px-2.5 py-3 text-base text-[var(--text-muted)] hover:bg-black/80 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 transition-all min-h-[44px] lg:px-1.5 lg:py-1 lg:text-xs lg:min-h-0"
         >
           ↩
         </button>
@@ -100,22 +148,22 @@ export default function PlayerScoreCard({
             return (
               <div
                 key={st.id}
-                className="flex items-center overflow-hidden rounded-lg border border-yellow-400/10 bg-black/70"
+                className="flex items-center overflow-hidden rounded border border-[var(--gold)]/10 bg-black/70"
               >
                 <button
                   onClick={() => onStatEvent(player_id, st.id)}
                   disabled={isPending}
-                  className="flex min-h-[40px] flex-1 items-center justify-between gap-1 px-2.5 py-2 text-sm text-stone-200 transition-all hover:bg-yellow-400/10 active:scale-[0.97] active:bg-yellow-400/15 disabled:opacity-50 lg:min-h-0 lg:px-2 lg:py-0.5 lg:text-xs"
+                  className="flex min-h-[40px] flex-1 items-center justify-between gap-1 px-2.5 py-2 text-sm text-[var(--text-muted)] transition-all hover:bg-[var(--gold)]/10 active:scale-[0.97] active:bg-[var(--gold)]/15 disabled:opacity-50 lg:min-h-0 lg:px-2 lg:py-0.5 lg:text-xs"
                   title={`Add ${st.name}`}
                 >
-                  <span className="truncate text-stone-400">{st.name}</span>
-                  <span className="font-bold text-yellow-300 tabular-nums">{count}</span>
+                  <span className="truncate text-[var(--text-dim)]">{st.name}</span>
+                  <span className="font-bold text-[var(--gold)] tabular-nums">{count}</span>
                 </button>
                 <button
                   onClick={() => onUndoStat(player_id, st.id)}
                   disabled={isPending || count === 0}
                   title={`Undo ${st.name}`}
-                  className="min-h-[40px] border-l border-yellow-400/10 px-1.5 py-2 text-sm text-stone-500 transition-all hover:bg-yellow-400/10 hover:text-stone-300 active:bg-yellow-400/15 disabled:cursor-not-allowed disabled:opacity-30 lg:min-h-0 lg:px-1 lg:py-0.5 lg:text-xs"
+                  className="min-h-[40px] border-l border-[var(--gold)]/10 px-1.5 py-2 text-sm text-[var(--text-dim)] transition-all hover:bg-[var(--gold)]/10 hover:text-[var(--text-muted)] active:bg-[var(--gold)]/15 disabled:cursor-not-allowed disabled:opacity-30 lg:min-h-0 lg:px-1 lg:py-0.5 lg:text-xs"
                 >
                   ↩
                 </button>

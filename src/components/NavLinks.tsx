@@ -29,10 +29,10 @@ export default function NavLinks({ isAdmin }: Props) {
         <Link
           key={link.href}
           href={link.href}
-          className={`font-bold uppercase tracking-wide py-2 transition border-b-2 ${
+          className={`font-bold uppercase tracking-wide py-2 transition border-b-2 font-[family-name:var(--font-display)] text-sm sm:text-base ${
             isActive(link.href)
-              ? 'text-yellow-300 border-yellow-400'
-              : 'text-stone-300 border-transparent hover:text-yellow-300'
+              ? 'text-[var(--gold)] border-[var(--gold)]'
+              : 'text-[var(--text-muted)] border-transparent hover:text-[var(--gold)]'
           }`}
         >
           {link.label}
@@ -41,10 +41,10 @@ export default function NavLinks({ isAdmin }: Props) {
       {isAdmin ? (
         <Link
           href="/admin"
-          className={`font-bold uppercase tracking-wide py-2 transition border-b-2 ${
+          className={`font-bold uppercase tracking-wide py-2 transition border-b-2 font-[family-name:var(--font-display)] text-sm sm:text-base ${
             isActive('/admin')
-              ? 'text-yellow-300 border-yellow-400'
-              : 'text-yellow-300/70 border-transparent hover:text-yellow-200'
+              ? 'text-[var(--gold)] border-[var(--gold)]'
+              : 'text-[var(--gold)]/70 border-transparent hover:text-[var(--gold-hover)]'
           }`}
         >
           Admin
@@ -52,10 +52,10 @@ export default function NavLinks({ isAdmin }: Props) {
       ) : (
         <Link
           href="/login"
-          className={`font-bold uppercase tracking-wide py-2 transition border-b-2 ${
+          className={`font-bold uppercase tracking-wide py-2 transition border-b-2 font-[family-name:var(--font-display)] text-sm sm:text-base ${
             isActive('/login')
-              ? 'text-stone-300 border-yellow-400'
-              : 'text-stone-500 border-transparent hover:text-stone-300'
+              ? 'text-[var(--text-muted)] border-[var(--gold)]'
+              : 'text-[var(--text-dim)] border-transparent hover:text-[var(--text-muted)]'
           }`}
         >
           Login

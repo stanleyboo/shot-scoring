@@ -4,7 +4,7 @@ import { useOptimistic, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { recordShot, undoLastShot } from '@/actions/shots';
 import { recordStatEvent, undoLastStatEvent } from '@/actions/stats';
-import { endSession, updateOppositionScore, togglePlayerOpposition } from '@/actions/sessions';
+import { endSession, updateOppositionScore, togglePlayerOpposition, setPlayerPosition, togglePlayerQuarter } from '@/actions/sessions';
 import PlayerScoreCard from './PlayerScoreCard';
 import ConfirmModal from './ConfirmModal';
 import { useToast } from './ToastProvider';
@@ -15,7 +15,9 @@ type PlayerStats = SessionWithStats['players'][number];
 type OptimisticAction =
   | { type: 'shot'; playerId: number; scored: boolean }
   | { type: 'stat'; playerId: number; statTypeId: number; delta: number }
-  | { type: 'toggle_opp'; playerId: number };
+  | { type: 'toggle_opp'; playerId: number }
+  | { type: 'set_position'; playerId: number; position: string | null }
+  | { type: 'toggle_quarter'; playerId: number; quarter: number };
 
 interface Props {
   session: Session;
@@ -31,6 +33,7 @@ export default function ScoringBoard({ session, players, statTypes }: Props) {
   const [oppHistory, setOppHistory] = useState<({ type: 'scored' | 'missed' } | { type: 'reset'; prevScore: number; prevAttempted: number })[]>([]);
   const [showEndModal, setShowEndModal] = useState(false);
   const [quarter, setQuarter] = useState(1);
+  const [positionFilter, setPositionFilter] = useState<string>('');
   const { toast } = useToast();
 
   const [optimisticPlayers, addOptimistic] = useOptimistic(
@@ -47,6 +50,16 @@ export default function ScoringBoard({ session, players, statTypes }: Props) {
         }
         if (action.type === 'toggle_opp') {
           return { ...p, is_opposition: !p.is_opposition };
+        }
+        if (action.type === 'set_position') {
+          return { ...p, position: action.position };
+        }
+        if (action.type === 'toggle_quarter') {
+          const qp = [...p.quarters_played];
+          const idx = qp.indexOf(action.quarter);
+          if (idx >= 0) qp.splice(idx, 1);
+          else qp.push(action.quarter);
+          return { ...p, quarters_played: qp.sort() };
         }
         return {
           ...p,
@@ -100,6 +113,20 @@ export default function ScoringBoard({ session, players, statTypes }: Props) {
     startTransition(async () => {
       addOptimistic({ type: 'toggle_opp', playerId });
       await togglePlayerOpposition(session.id, playerId);
+    });
+  }
+
+  function handleSetPosition(playerId: number, position: string | null) {
+    startTransition(async () => {
+      addOptimistic({ type: 'set_position', playerId, position });
+      await setPlayerPosition(session.id, playerId, position);
+    });
+  }
+
+  function handleToggleQuarter(playerId: number, q: number) {
+    startTransition(async () => {
+      addOptimistic({ type: 'toggle_quarter', playerId, quarter: q });
+      await togglePlayerQuarter(session.id, playerId, q);
     });
   }
 
@@ -167,8 +194,20 @@ export default function ScoringBoard({ session, players, statTypes }: Props) {
     });
   }
 
+  const POSITIONS = ['GS', 'GA', 'WA', 'C', 'WD', 'GD', 'GK'];
   const homePlayers = optimisticPlayers.filter(p => !p.is_opposition);
   const oppPlayers = optimisticPlayers.filter(p => p.is_opposition);
+  const filteredHome = positionFilter
+    ? homePlayers.filter(p => p.position === positionFilter)
+    : homePlayers;
+
+  // Sort: players with positions first (in netball order), then no-position
+  const sortedHome = [...filteredHome].sort((a, b) => {
+    const ai = a.position ? POSITIONS.indexOf(a.position) : 99;
+    const bi = b.position ? POSITIONS.indexOf(b.position) : 99;
+    if (ai !== bi) return ai - bi;
+    return a.name.localeCompare(b.name);
+  });
 
   return (
     <div className="space-y-4 lg:space-y-2">
@@ -176,11 +215,11 @@ export default function ScoringBoard({ session, players, statTypes }: Props) {
       <div className="space-y-4 lg:space-y-0 lg:flex lg:items-center lg:justify-between lg:gap-4">
         <div className="flex items-center justify-between gap-2 lg:gap-3">
           <div className="min-w-0">
-            <h1 className="text-lg font-bold text-stone-50 truncate sm:text-xl lg:text-base">
+            <h1 className="text-lg font-bold text-[var(--text)] truncate sm:text-xl lg:text-base font-[family-name:var(--font-display)] uppercase">
               {session.name ?? 'Training Session'}
             </h1>
-            <p className="text-xs text-yellow-300 sm:text-sm lg:text-xs">{session.team_name}</p>
-            <p className="text-xs text-stone-500 sm:text-sm lg:text-xs">
+            <p className="text-xs text-[var(--gold)] sm:text-sm lg:text-xs">{session.team_name}</p>
+            <p className="text-xs text-[var(--text-dim)] sm:text-sm lg:text-xs">
               {new Date(session.started_at).toLocaleString('en-GB', {
                 weekday: 'short',
                 day: 'numeric',
@@ -193,43 +232,43 @@ export default function ScoringBoard({ session, players, statTypes }: Props) {
           <button
             onClick={handleEnd}
             disabled={isPending}
-            className="flex-shrink-0 rounded-lg border border-yellow-400/20 px-3 py-2 text-sm text-stone-200 transition-colors hover:bg-black/70 active:bg-black disabled:opacity-50 lg:py-1.5 lg:text-xs"
+            className="flex-shrink-0 rounded border border-[var(--border-gold)] px-3 py-2 text-sm text-[var(--text-muted)] transition-colors hover:bg-black/70 active:bg-black disabled:opacity-50 lg:py-1.5 lg:text-xs"
           >
             End Match
           </button>
         </div>
 
-        <div className="flex items-center justify-center gap-3 rounded-xl border border-yellow-400/15 bg-black/55 px-3 py-2 sm:gap-4 sm:px-4 sm:py-3 lg:rounded-xl lg:px-3 lg:py-1.5 lg:gap-3">
+        <div className="flex items-center justify-center gap-3 rounded border border-[var(--border-gold)] bg-black/55 px-3 py-2 sm:gap-4 sm:px-4 sm:py-3 lg:px-3 lg:py-1.5 lg:gap-3">
           <div className="text-center min-w-0">
-            <p className="text-[10px] font-medium uppercase tracking-wide text-stone-500 truncate sm:text-xs lg:text-[10px]">{session.team_name}</p>
-            <p className="text-2xl font-black text-yellow-300 tabular-nums sm:text-3xl lg:text-2xl">{teamScore}</p>
-            <p className="text-[10px] text-stone-500 tabular-nums">{teamPct !== null ? `${teamPct}%` : '—'}</p>
+            <p className="text-[10px] font-medium uppercase tracking-wide text-[var(--text-dim)] truncate sm:text-xs lg:text-[10px]">{session.team_name}</p>
+            <p className="text-2xl font-black text-[var(--gold)] tabular-nums sm:text-3xl lg:text-2xl font-[family-name:var(--font-display)]">{teamScore}</p>
+            <p className="text-[10px] text-[var(--text-dim)] tabular-nums">{teamPct !== null ? `${teamPct}%` : '—'}</p>
           </div>
-          <span className="text-xl font-bold text-stone-700 sm:text-2xl lg:text-xl">:</span>
+          <span className="text-xl font-bold text-[var(--text-dim)] sm:text-2xl lg:text-xl">:</span>
           <div className="text-center min-w-0">
-            <p className="text-[10px] font-medium uppercase tracking-wide text-stone-500 sm:text-xs lg:text-[10px]">Opp</p>
-            <p className="text-2xl font-black text-white tabular-nums sm:text-3xl lg:text-2xl">{oppTotal}</p>
-            <p className="text-[10px] text-stone-500 tabular-nums">{oppPct !== null ? `${oppPct}%` : '—'}</p>
+            <p className="text-[10px] font-medium uppercase tracking-wide text-[var(--text-dim)] sm:text-xs lg:text-[10px]">Opp</p>
+            <p className="text-2xl font-black text-white tabular-nums sm:text-3xl lg:text-2xl font-[family-name:var(--font-display)]">{oppTotal}</p>
+            <p className="text-[10px] text-[var(--text-dim)] tabular-nums">{oppPct !== null ? `${oppPct}%` : '—'}</p>
           </div>
           <div className="flex gap-1 ml-1 sm:ml-2 lg:ml-1">
             <button
               onClick={() => handleOppScored()}
               disabled={isPending}
-              className="rounded-lg bg-yellow-400 px-2 py-1 text-[10px] font-black text-black hover:bg-yellow-300 active:scale-95 disabled:opacity-50 transition-all sm:px-2.5 sm:py-1.5 sm:text-xs lg:px-2 lg:py-1 lg:min-h-0"
+              className="rounded bg-[var(--gold)] px-2 py-1 text-[10px] font-black text-black hover:bg-[var(--gold-hover)] active:scale-95 disabled:opacity-50 transition-all sm:px-2.5 sm:py-1.5 sm:text-xs lg:px-2 lg:py-1 lg:min-h-0"
             >
               SCORED
             </button>
             <button
               onClick={() => handleOppMiss()}
               disabled={isPending}
-              className="rounded-lg bg-red-600 px-2 py-1 text-[10px] font-black text-white hover:bg-red-500 active:scale-95 disabled:opacity-50 transition-all sm:px-2.5 sm:py-1.5 sm:text-xs lg:px-2 lg:py-1 lg:min-h-0"
+              className="rounded bg-[var(--red)] px-2 py-1 text-[10px] font-black text-white hover:bg-[var(--red-hover)] active:scale-95 disabled:opacity-50 transition-all sm:px-2.5 sm:py-1.5 sm:text-xs lg:px-2 lg:py-1 lg:min-h-0"
             >
               MISSED
             </button>
             <button
               onClick={() => handleOppUndo()}
               disabled={isPending || oppHistory.length === 0}
-              className="rounded-lg bg-stone-700 px-1.5 py-1 text-xs text-stone-400 hover:bg-stone-600 active:scale-95 disabled:opacity-30 transition-all sm:px-2 sm:py-1.5 sm:text-sm lg:px-1.5 lg:py-1 lg:text-xs lg:min-h-0"
+              className="rounded bg-[var(--border)] px-1.5 py-1 text-xs text-[var(--text-muted)] hover:bg-[var(--text-dim)] active:scale-95 disabled:opacity-30 transition-all sm:px-2 sm:py-1.5 sm:text-sm lg:px-1.5 lg:py-1 lg:text-xs lg:min-h-0"
               title="Undo"
             >
               ↩
@@ -237,7 +276,7 @@ export default function ScoringBoard({ session, players, statTypes }: Props) {
             <button
               onClick={() => handleOppReset()}
               disabled={isPending || (oppScoreManual === 0 && oppAttemptedManual === 0)}
-              className="rounded-lg bg-stone-700 px-1.5 py-1 text-[10px] font-bold text-stone-400 hover:bg-stone-600 active:scale-95 disabled:opacity-30 transition-all sm:px-2 sm:py-1.5 sm:text-xs lg:px-1.5 lg:py-1 lg:text-xs lg:min-h-0"
+              className="rounded bg-[var(--border)] px-1.5 py-1 text-[10px] font-bold text-[var(--text-muted)] hover:bg-[var(--text-dim)] active:scale-95 disabled:opacity-30 transition-all sm:px-2 sm:py-1.5 sm:text-xs lg:px-1.5 lg:py-1 lg:text-xs lg:min-h-0"
               title="Reset opponent score"
             >
               RST
@@ -253,10 +292,10 @@ export default function ScoringBoard({ session, players, statTypes }: Props) {
             key={q}
             type="button"
             onClick={() => setQuarter(q)}
-            className={`px-4 py-2 text-sm font-bold rounded-lg transition-all ${
+            className={`px-4 py-2 text-sm font-bold rounded transition-all font-[family-name:var(--font-display)] text-base ${
               quarter === q
-                ? 'bg-yellow-400 text-black'
-                : 'border border-stone-800 text-stone-400 hover:border-yellow-500 hover:text-yellow-300'
+                ? 'bg-[var(--gold)] text-black'
+                : 'border border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--gold)] hover:text-[var(--gold)]'
             }`}
           >
             Q{q}
@@ -264,18 +303,50 @@ export default function ScoringBoard({ session, players, statTypes }: Props) {
         ))}
       </div>
 
+      {/* Position filter */}
+      {homePlayers.some(p => p.position) && (
+        <div className="flex items-center justify-center gap-1 flex-wrap">
+          <button
+            onClick={() => setPositionFilter('')}
+            className={`px-2.5 py-1 text-[10px] font-bold uppercase rounded transition-all ${
+              !positionFilter
+                ? 'bg-[var(--gold)] text-black'
+                : 'border border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--gold)]'
+            }`}
+          >
+            All
+          </button>
+          {POSITIONS.filter(pos => homePlayers.some(p => p.position === pos)).map(pos => (
+            <button
+              key={pos}
+              onClick={() => setPositionFilter(positionFilter === pos ? '' : pos)}
+              className={`px-2.5 py-1 text-[10px] font-bold uppercase rounded transition-all ${
+                positionFilter === pos
+                  ? 'bg-[var(--gold)] text-black'
+                  : 'border border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--gold)]'
+              }`}
+            >
+              {pos}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Player cards */}
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-4 lg:gap-1.5">
-        {homePlayers.map(player => (
+        {sortedHome.map(player => (
           <PlayerScoreCard
             key={player.player_id}
             player={player}
             statTypes={statTypes}
+            currentQuarter={quarter}
             onShot={handleShot}
             onUndo={handleUndo}
             onStatEvent={handleStatEvent}
             onUndoStat={handleUndoStat}
             onToggleOpposition={handleToggleOpposition}
+            onSetPosition={handleSetPosition}
+            onToggleQuarter={handleToggleQuarter}
             isPending={isPending}
           />
         ))}
@@ -284,18 +355,21 @@ export default function ScoringBoard({ session, players, statTypes }: Props) {
       {/* Opposition players */}
       {oppPlayers.length > 0 && (
         <>
-          <p className="text-xs font-medium uppercase tracking-wider text-stone-500 lg:mt-1">Opposition</p>
+          <p className="text-xs font-medium uppercase tracking-wider text-[var(--text-dim)] lg:mt-1 font-[family-name:var(--font-display)] text-sm">Opposition</p>
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-4 lg:gap-1.5">
             {oppPlayers.map(player => (
               <PlayerScoreCard
                 key={player.player_id}
                 player={player}
                 statTypes={statTypes}
+                currentQuarter={quarter}
                 onShot={handleShot}
                 onUndo={handleUndo}
                 onStatEvent={handleStatEvent}
                 onUndoStat={handleUndoStat}
                 onToggleOpposition={handleToggleOpposition}
+                onSetPosition={handleSetPosition}
+                onToggleQuarter={handleToggleQuarter}
                 isPending={isPending}
               />
             ))}

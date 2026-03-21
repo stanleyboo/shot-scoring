@@ -1,12 +1,19 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { Bebas_Neue, DM_Mono } from 'next/font/google';
 import './globals.css';
 import Nav from '@/components/Nav';
 import ToastProvider from '@/components/ToastProvider';
 
-const inter = Inter({
+const bebasNeue = Bebas_Neue({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '900'],
+  weight: '400',
+  variable: '--font-display',
+});
+
+const dmMono = DM_Mono({
+  subsets: ['latin'],
+  weight: ['300', '400', '500'],
+  variable: '--font-body',
 });
 
 export const metadata: Metadata = {
@@ -34,7 +41,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} min-h-screen antialiased`}>
+      <body className={`${dmMono.variable} ${bebasNeue.variable} font-[family-name:var(--font-body)] min-h-screen antialiased`}>
         <ToastProvider>
           <Nav />
           <main className="mx-auto max-w-7xl px-4 py-8">

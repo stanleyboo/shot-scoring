@@ -34,16 +34,16 @@ export default function LoginForm() {
           onChange={e => setPassword(e.target.value)}
           placeholder="Password"
           autoFocus
-          className="w-full bg-[#111] border border-stone-800 rounded-lg px-4 py-3 text-stone-50 placeholder:text-stone-500 focus:border-yellow-500 focus:outline-none focus:ring-1 focus:ring-yellow-500/30"
+          className="w-full bg-[var(--surface)] border border-[var(--border)] rounded px-4 py-3 text-[var(--text)] placeholder:text-[var(--text-dim)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
         />
       </div>
       {error && (
-        <p className="text-sm text-red-400">{error}</p>
+        <p className="text-sm text-[var(--red)]">{error}</p>
       )}
       <button
         type="submit"
         disabled={isPending || !password}
-        className="w-full bg-yellow-400 text-black font-bold rounded-lg py-3 hover:bg-yellow-300 active:scale-[0.98] disabled:opacity-50 transition-all"
+        className="w-full bg-[var(--gold)] text-black font-bold rounded py-3 hover:bg-[var(--gold-hover)] active:scale-[0.98] disabled:opacity-50 transition-all"
       >
         {isPending ? 'Logging in...' : 'Login'}
       </button>

@@ -33,7 +33,7 @@ export default function DeleteSessionButton({ sessionId, redirectTo }: Props) {
         onClick={handleDelete}
         disabled={isPending}
         title="Delete session"
-        className="rounded-lg px-3 py-1.5 text-sm text-stone-500 hover:bg-red-950/40 hover:text-red-400 disabled:opacity-40 transition-colors"
+        className="rounded px-3 py-1.5 text-sm text-[var(--text-dim)] hover:bg-[var(--red)]/10 hover:text-[var(--red)] disabled:opacity-40 transition-colors"
       >
         {isPending ? '...' : 'Delete'}
       </button>

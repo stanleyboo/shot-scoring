@@ -30,7 +30,7 @@ export default function RemovePlayerButton({ sessionId, playerId, playerName }: 
       <button
         onClick={() => setShowModal(true)}
         disabled={isPending}
-        className="text-red-400/70 hover:text-red-400 transition-colors disabled:opacity-50 text-xs"
+        className="text-[var(--red)]/70 hover:text-[var(--red)] transition-colors disabled:opacity-50 text-xs"
         title={`Remove ${playerName}`}
       >
         ✕

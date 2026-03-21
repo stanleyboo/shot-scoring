@@ -46,7 +46,7 @@ export default function TeamList({ teams }: { teams: TeamSummary[] }) {
         return (
           <div
             key={team.id}
-            className="border border-stone-800 bg-[#111] rounded-lg px-4 py-4"
+            className="border border-[var(--border)] bg-[var(--surface)] rounded px-4 py-4 gold-accent"
           >
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
@@ -56,28 +56,28 @@ export default function TeamList({ teams }: { teams: TeamSummary[] }) {
                       autoFocus
                       value={name}
                       onChange={event => setName(event.target.value)}
-                      className="min-w-[220px] flex-1 bg-[#111] border border-stone-800 rounded-lg px-3 py-2 text-stone-50 placeholder:text-stone-500 focus:border-yellow-500 focus:outline-none focus:ring-1 focus:ring-yellow-500/30"
+                      className="min-w-[220px] flex-1 bg-[var(--surface)] border border-[var(--border)] rounded px-3 py-2 text-[var(--text)] placeholder:text-[var(--text-dim)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
                       disabled={isPending}
                     />
                     <button
                       onClick={() => handleRename(team.id)}
                       disabled={isPending || !name.trim()}
-                      className="bg-yellow-400 text-black font-bold rounded-lg px-3 py-2 text-sm hover:bg-yellow-300 active:scale-[0.98] disabled:opacity-50 transition-all"
+                      className="bg-[var(--gold)] text-black font-bold rounded px-3 py-2 text-sm hover:bg-[var(--gold-hover)] active:scale-[0.98] disabled:opacity-50 transition-all"
                     >
                       Save
                     </button>
                     <button
                       onClick={cancelEditing}
                       disabled={isPending}
-                      className="border border-stone-800 bg-transparent rounded-lg px-3 py-2 text-sm font-black uppercase tracking-wide text-stone-300 hover:border-yellow-500 hover:text-yellow-300 disabled:opacity-50 transition-all"
+                      className="border border-[var(--border)] bg-transparent rounded px-3 py-2 text-sm font-black uppercase tracking-wide text-[var(--text-muted)] hover:border-[var(--gold)] hover:text-[var(--gold)] disabled:opacity-50 transition-all"
                     >
                       Cancel
                     </button>
                   </div>
                 ) : (
                   <>
-                    <p className="text-lg font-black text-yellow-300">{team.name}</p>
-                    <p className="text-sm text-stone-400">
+                    <p className="text-lg font-black text-[var(--gold)] font-[family-name:var(--font-display)] uppercase">{team.name}</p>
+                    <p className="text-sm text-[var(--text-muted)]">
                       {team.player_count} players, {team.session_count} matches
                     </p>
                   </>
@@ -88,7 +88,7 @@ export default function TeamList({ teams }: { teams: TeamSummary[] }) {
                 <p className="text-sm font-semibold text-white">
                   {team.wins}-{team.draws}-{team.losses}
                 </p>
-                <p className="text-xs text-stone-400">
+                <p className="text-xs text-[var(--text-muted)]">
                   {percentage === null ? 'No shooting data yet' : `${percentage}% accuracy`}
                 </p>
               </div>
@@ -97,7 +97,7 @@ export default function TeamList({ teams }: { teams: TeamSummary[] }) {
             <div className="mt-4 flex items-center gap-3">
               <Link
                 href={`/teams/${team.id}`}
-                className="bg-yellow-400 rounded-lg border border-yellow-400 px-3 py-2 text-sm font-black uppercase tracking-wide text-black hover:bg-yellow-300"
+                className="bg-[var(--gold)] rounded border border-[var(--gold)] px-3 py-2 text-sm font-black uppercase tracking-wide text-black hover:bg-[var(--gold-hover)]"
               >
                 Open Team
               </Link>
@@ -106,14 +106,14 @@ export default function TeamList({ teams }: { teams: TeamSummary[] }) {
                   <button
                     onClick={() => startEditing(team)}
                     disabled={isPending}
-                    className="border border-stone-800 rounded-lg px-3 py-2 text-sm font-black uppercase tracking-wide text-stone-300 hover:border-yellow-400 hover:text-yellow-300"
+                    className="border border-[var(--border)] rounded px-3 py-2 text-sm font-black uppercase tracking-wide text-[var(--text-muted)] hover:border-[var(--gold)] hover:text-[var(--gold)]"
                   >
                     Rename
                   </button>
                   <button
                     onClick={() => setDeletingId(team.id)}
                     disabled={isPending}
-                    className="border border-red-900/50 rounded-lg px-3 py-2 text-sm font-black uppercase tracking-wide text-red-400 hover:border-red-500 hover:text-red-300 transition-all"
+                    className="border border-[var(--red)]/30 rounded px-3 py-2 text-sm font-black uppercase tracking-wide text-[var(--red)] hover:border-[var(--red)] hover:text-[var(--red-hover)] transition-all"
                   >
                     Delete
                   </button>

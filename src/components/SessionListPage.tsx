@@ -38,7 +38,7 @@ export default function SessionListPage({ sessions, teams, isAdmin: admin }: Pro
           <select
             value={teamFilter}
             onChange={e => setTeamFilter(e.target.value)}
-            className="bg-[#111] border border-stone-800 rounded-lg px-4 py-3 text-stone-50 focus:border-yellow-500 focus:outline-none focus:ring-1 focus:ring-yellow-500/30"
+            className="bg-[var(--surface)] border border-[var(--border)] rounded px-4 py-3 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
           >
             <option value="">All teams</option>
             {teams.map(t => (
@@ -56,8 +56,8 @@ export default function SessionListPage({ sessions, teams, isAdmin: admin }: Pro
           return (
             <section key={team.id} className="space-y-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-white">{team.name}</h2>
-                <Link href={`/teams/${team.id}`} className="text-sm text-yellow-300 hover:text-yellow-200">
+                <h2 className="text-xl font-bold text-white font-[family-name:var(--font-display)] uppercase">{team.name}</h2>
+                <Link href={`/teams/${team.id}`} className="text-sm text-[var(--gold)] hover:text-[var(--gold-hover)]">
                   Team dashboard →
                 </Link>
               </div>
@@ -71,7 +71,7 @@ export default function SessionListPage({ sessions, teams, isAdmin: admin }: Pro
                   return (
                     <li
                       key={session.id}
-                      className="flex items-center gap-1 border border-stone-800 bg-[#111] rounded-lg transition hover:border-yellow-400"
+                      className="flex items-center gap-1 border border-[var(--border)] bg-[var(--surface)] rounded transition hover:border-[var(--gold)] gold-glow"
                     >
                       <Link href={href} className="flex flex-1 items-center justify-between px-4 py-4">
                         <div>
@@ -80,12 +80,12 @@ export default function SessionListPage({ sessions, teams, isAdmin: admin }: Pro
                               {session.name ?? 'Training Session'}
                             </span>
                             {!session.ended_at && (
-                              <span className="bg-yellow-400 px-2 py-0.5 text-xs font-black uppercase tracking-wide text-black">
+                              <span className="bg-[var(--gold)] px-2 py-0.5 text-xs font-black uppercase tracking-wide text-black">
                                 LIVE
                               </span>
                             )}
                           </div>
-                          <p className="mt-0.5 text-sm text-stone-500">
+                          <p className="mt-0.5 text-sm text-[var(--text-dim)]">
                             {new Date(session.started_at).toLocaleDateString('en-GB', {
                               weekday: 'short',
                               day: 'numeric',
@@ -95,8 +95,8 @@ export default function SessionListPage({ sessions, teams, isAdmin: admin }: Pro
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm text-stone-200">{session.total_shots} shots</p>
-                          <p className="text-xs text-stone-500">{session.player_count} players</p>
+                          <p className="text-sm text-[var(--text-muted)]">{session.total_shots} shots</p>
+                          <p className="text-xs text-[var(--text-dim)]">{session.player_count} players</p>
                         </div>
                       </Link>
                       {admin && (
@@ -114,8 +114,8 @@ export default function SessionListPage({ sessions, teams, isAdmin: admin }: Pro
       </div>
 
       {filtered.length === 0 && search && (
-        <div className="border border-dashed border-yellow-400/30 bg-[#111] rounded-lg p-8 text-center">
-          <p className="text-stone-400">No matches found.</p>
+        <div className="border border-dashed border-[var(--gold)]/30 bg-[var(--surface)] rounded p-8 text-center">
+          <p className="text-[var(--text-muted)]">No matches found.</p>
         </div>
       )}
     </div>

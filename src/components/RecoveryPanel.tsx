@@ -19,7 +19,7 @@ export default function RecoveryPanel({ sessions, players, teams }: Props) {
 
   if (empty) {
     return (
-      <p className="text-sm text-stone-500">No deleted items to recover.</p>
+      <p className="text-sm text-[var(--text-dim)]">No deleted items to recover.</p>
     );
   }
 
@@ -39,14 +39,14 @@ export default function RecoveryPanel({ sessions, players, teams }: Props) {
     <div className="space-y-3">
       {teams.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Teams</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-dim)]">Teams</p>
           {teams.map(team => (
-            <div key={team.id} className="flex items-center justify-between border border-stone-800 bg-[#111] rounded-lg px-4 py-3">
-              <span className="text-stone-300">{team.name}</span>
+            <div key={team.id} className="flex items-center justify-between border border-[var(--border)] bg-[var(--surface)] rounded px-4 py-3">
+              <span className="text-[var(--text-muted)]">{team.name}</span>
               <button
                 onClick={() => handleRestore('team', team.id)}
                 disabled={isPending}
-                className="text-xs font-bold text-yellow-300 hover:text-yellow-200 disabled:opacity-50"
+                className="text-xs font-bold text-[var(--gold)] hover:text-[var(--gold-hover)] disabled:opacity-50"
               >
                 Restore
               </button>
@@ -57,17 +57,17 @@ export default function RecoveryPanel({ sessions, players, teams }: Props) {
 
       {players.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Players</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-dim)]">Players</p>
           {players.map(player => (
-            <div key={player.id} className="flex items-center justify-between border border-stone-800 bg-[#111] rounded-lg px-4 py-3">
+            <div key={player.id} className="flex items-center justify-between border border-[var(--border)] bg-[var(--surface)] rounded px-4 py-3">
               <div>
-                <span className="text-stone-300">{player.name}</span>
-                {player.team_name && <span className="text-xs text-stone-500 ml-2">{player.team_name}</span>}
+                <span className="text-[var(--text-muted)]">{player.name}</span>
+                {player.team_name && <span className="text-xs text-[var(--text-dim)] ml-2">{player.team_name}</span>}
               </div>
               <button
                 onClick={() => handleRestore('player', player.id)}
                 disabled={isPending}
-                className="text-xs font-bold text-yellow-300 hover:text-yellow-200 disabled:opacity-50"
+                className="text-xs font-bold text-[var(--gold)] hover:text-[var(--gold-hover)] disabled:opacity-50"
               >
                 Restore
               </button>
@@ -78,19 +78,19 @@ export default function RecoveryPanel({ sessions, players, teams }: Props) {
 
       {sessions.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Matches</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-dim)]">Matches</p>
           {sessions.map(session => (
-            <div key={session.id} className="flex items-center justify-between border border-stone-800 bg-[#111] rounded-lg px-4 py-3">
+            <div key={session.id} className="flex items-center justify-between border border-[var(--border)] bg-[var(--surface)] rounded px-4 py-3">
               <div>
-                <span className="text-stone-300">{session.name ?? 'Unnamed match'}</span>
-                <span className="text-xs text-stone-500 ml-2">
+                <span className="text-[var(--text-muted)]">{session.name ?? 'Unnamed match'}</span>
+                <span className="text-xs text-[var(--text-dim)] ml-2">
                   {new Date(session.started_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                 </span>
               </div>
               <button
                 onClick={() => handleRestore('session', session.id)}
                 disabled={isPending}
-                className="text-xs font-bold text-yellow-300 hover:text-yellow-200 disabled:opacity-50"
+                className="text-xs font-bold text-[var(--gold)] hover:text-[var(--gold-hover)] disabled:opacity-50"
               >
                 Restore
               </button>

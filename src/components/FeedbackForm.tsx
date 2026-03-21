@@ -29,7 +29,7 @@ export default function FeedbackForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4 max-w-lg">
       <div>
-        <label htmlFor="fb-name" className="block text-sm font-medium text-stone-300 mb-1">
+        <label htmlFor="fb-name" className="block text-sm font-medium text-[var(--text-muted)] mb-1">
           Your name
         </label>
         <input
@@ -40,11 +40,11 @@ export default function FeedbackForm() {
           placeholder="Name"
           required
           disabled={isPending}
-          className="w-full bg-[#111] border border-stone-800 rounded-lg px-3 py-2 text-stone-50 placeholder:text-stone-600 focus:border-yellow-500 focus:outline-none focus:ring-1 focus:ring-yellow-500/30 disabled:opacity-50"
+          className="w-full bg-[var(--surface)] border border-[var(--border)] rounded px-3 py-2 text-[var(--text)] placeholder:text-[var(--text-dim)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30 disabled:opacity-50"
         />
       </div>
       <div>
-        <label htmlFor="fb-message" className="block text-sm font-medium text-stone-300 mb-1">
+        <label htmlFor="fb-message" className="block text-sm font-medium text-[var(--text-muted)] mb-1">
           Message
         </label>
         <textarea
@@ -55,13 +55,13 @@ export default function FeedbackForm() {
           required
           rows={4}
           disabled={isPending}
-          className="w-full bg-[#111] border border-stone-800 rounded-lg px-3 py-2 text-stone-50 placeholder:text-stone-600 focus:border-yellow-500 focus:outline-none focus:ring-1 focus:ring-yellow-500/30 disabled:opacity-50 resize-none"
+          className="w-full bg-[var(--surface)] border border-[var(--border)] rounded px-3 py-2 text-[var(--text)] placeholder:text-[var(--text-dim)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30 disabled:opacity-50 resize-none"
         />
       </div>
       <button
         type="submit"
         disabled={isPending || !name.trim() || !message.trim()}
-        className="bg-yellow-400 text-black font-bold rounded-lg px-5 py-2.5 hover:bg-yellow-300 active:scale-[0.98] disabled:opacity-50 transition-all"
+        className="bg-[var(--gold)] text-black font-bold rounded px-5 py-2.5 hover:bg-[var(--gold-hover)] active:scale-[0.98] disabled:opacity-50 transition-all"
       >
         {isPending ? 'Sending...' : 'Send Feedback'}
       </button>

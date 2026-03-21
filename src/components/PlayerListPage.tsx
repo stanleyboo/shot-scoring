@@ -34,8 +34,8 @@ export default function PlayerListPage({ players, teams, canEdit }: Props) {
           return (
             <section key={team.id} className="space-y-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-white">{team.name}</h2>
-                <p className="text-sm text-stone-500">{teamPlayers.length} players</p>
+                <h2 className="text-xl font-bold text-white font-[family-name:var(--font-display)] uppercase">{team.name}</h2>
+                <p className="text-sm text-[var(--text-dim)]">{teamPlayers.length} players</p>
               </div>
               <PlayerList players={teamPlayers} teams={teams} canEdit={canEdit} />
             </section>

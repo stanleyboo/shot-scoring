@@ -17,16 +17,16 @@ function Toggle({ label, description, checked, onChange, disabled }: {
   disabled: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-lg border border-stone-800 bg-[#111] p-4">
+    <div className="flex items-center justify-between gap-4 rounded border border-[var(--border)] bg-[var(--surface)] p-4 gold-accent">
       <div>
-        <p className="font-medium text-stone-50">{label}</p>
-        <p className="text-sm text-stone-500">{description}</p>
+        <p className="font-medium text-[var(--text)]">{label}</p>
+        <p className="text-sm text-[var(--text-dim)]">{description}</p>
       </div>
       <button
         onClick={onChange}
         disabled={disabled}
         className={`relative h-7 w-12 rounded-full transition-colors flex-shrink-0 ${
-          checked ? 'bg-yellow-400' : 'bg-stone-700'
+          checked ? 'bg-[var(--gold)]' : 'bg-[var(--border)]'
         } disabled:opacity-50`}
       >
         <span className={`absolute top-0.5 h-6 w-6 rounded-full ${checked ? 'bg-black' : 'bg-white'} transition-transform ${
@@ -50,8 +50,8 @@ export default function AdminSettings({ settings }: Props) {
 
   return (
     <div className="space-y-3">
-      <h2 className="text-lg font-semibold text-stone-300">Public Access</h2>
-      <p className="text-sm text-stone-500">Control what visitors can do without logging in.</p>
+      <h2 className="text-lg font-semibold text-[var(--text-muted)] font-[family-name:var(--font-display)] uppercase tracking-wide">Public Access</h2>
+      <p className="text-sm text-[var(--text-dim)]">Control what visitors can do without logging in.</p>
       <Toggle
         label="Anyone can create matches"
         description="When off, only admins can start new sessions"

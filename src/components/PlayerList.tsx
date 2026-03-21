@@ -74,16 +74,16 @@ export default function PlayerList({
 
   if (players.length === 0) {
     return (
-      <p className="border border-stone-800 bg-[#111] rounded-lg px-6 py-8 text-center text-sm uppercase tracking-[0.18em] text-stone-500">
+      <p className="border border-[var(--border)] bg-[var(--surface)] rounded px-6 py-8 text-center text-sm uppercase tracking-[0.18em] text-[var(--text-dim)]">
         No players yet.
       </p>
     );
   }
 
   return (
-    <ul className="border border-stone-800 bg-[#111] rounded-lg overflow-hidden">
+    <ul className="border border-[var(--border)] bg-[var(--surface)] rounded overflow-hidden">
       {players.map(player => (
-        <li key={player.id} className="border-t border-stone-800 first:border-t-0">
+        <li key={player.id} className="border-t border-[var(--border)] first:border-t-0">
           <div className="flex flex-col gap-3 px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
             {editingId === player.id ? (
               <form onSubmit={event => handleRename(event, player.id)} className="flex flex-1 items-center gap-2">
@@ -93,13 +93,13 @@ export default function PlayerList({
                   value={editName}
                   onChange={event => setEditName(event.target.value)}
                   maxLength={50}
-                  className="flex-1 bg-[#111] border border-stone-800 rounded-lg px-3 py-2 text-stone-50 focus:border-yellow-500 focus:outline-none focus:ring-1 focus:ring-yellow-500/30"
+                  className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
                   disabled={isPending}
                 />
                 <button
                   type="submit"
                   disabled={isPending || !editName.trim()}
-                  className="bg-yellow-400 text-black font-bold rounded-lg px-3 py-2 text-sm hover:bg-yellow-300 active:scale-[0.98] disabled:opacity-50 transition-all"
+                  className="bg-[var(--gold)] text-black font-bold rounded px-3 py-2 text-sm hover:bg-[var(--gold-hover)] active:scale-[0.98] disabled:opacity-50 transition-all"
                 >
                   Save
                 </button>
@@ -107,7 +107,7 @@ export default function PlayerList({
                   type="button"
                   onClick={cancelEditing}
                   disabled={isPending}
-                  className="border border-stone-800 bg-transparent text-stone-300 rounded-lg px-3 py-2 text-sm hover:border-yellow-500 hover:text-yellow-300 disabled:opacity-50 transition-all"
+                  className="border border-[var(--border)] bg-transparent text-[var(--text-muted)] rounded px-3 py-2 text-sm hover:border-[var(--gold)] hover:text-[var(--gold)] disabled:opacity-50 transition-all"
                 >
                   Cancel
                 </button>
@@ -117,21 +117,21 @@ export default function PlayerList({
                 <div className="flex min-w-0 items-center gap-2">
                   <span className="truncate text-lg font-bold text-white">{player.name}</span>
                   {player.total_shots > 0 && (
-                    <span className="bg-stone-900 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-stone-300">
+                    <span className="bg-[var(--border)] px-2 py-1 text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
                       {player.total_shots} shots
                     </span>
                   )}
                 </div>
                 {canEdit ? (
                   <div className="flex items-center gap-2">
-                    <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">
+                    <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-dim)]">
                       Team
                     </label>
                     <select
                       value={player.team_id}
                       onChange={event => handleMove(player.id, event.target.value)}
                       disabled={isPending}
-                      className="bg-[#111] border border-stone-800 rounded-lg px-3 py-2 text-sm text-yellow-300 focus:border-yellow-500 focus:outline-none focus:ring-1 focus:ring-yellow-500/30"
+                      className="bg-[var(--surface)] border border-[var(--border)] rounded px-3 py-2 text-sm text-[var(--gold)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
                     >
                       {teams.map(team => (
                         <option key={team.id} value={team.id}>
@@ -142,7 +142,7 @@ export default function PlayerList({
                   </div>
                 ) : (
                   player.team_name && (
-                    <span className="w-fit bg-yellow-400 px-2 py-1 text-xs font-black uppercase tracking-wide text-black">
+                    <span className="w-fit bg-[var(--gold)] px-2 py-1 text-xs font-black uppercase tracking-wide text-black">
                       {player.team_name}
                     </span>
                   )
@@ -154,7 +154,7 @@ export default function PlayerList({
               <div className="flex items-center gap-3 lg:flex-shrink-0">
                 <Link
                   href={`/players/${player.id}`}
-                  className="bg-yellow-400 px-3 py-2 text-sm font-black uppercase tracking-wide text-black transition hover:bg-yellow-300"
+                  className="bg-[var(--gold)] px-3 py-2 text-sm font-black uppercase tracking-wide text-black transition hover:bg-[var(--gold-hover)]"
                 >
                   Stats
                 </Link>
@@ -163,14 +163,14 @@ export default function PlayerList({
                     <button
                       onClick={() => startEditing(player)}
                       disabled={isPending}
-                      className="border border-stone-800 rounded-lg px-3 py-2 text-sm uppercase tracking-wide text-stone-200 transition hover:border-yellow-400 hover:text-yellow-300 disabled:opacity-40"
+                      className="border border-[var(--border)] rounded px-3 py-2 text-sm uppercase tracking-wide text-[var(--text-muted)] transition hover:border-[var(--gold)] hover:text-[var(--gold)] disabled:opacity-40"
                     >
                       Rename
                     </button>
                     <button
                       onClick={() => handleDelete(player.id, player.name, player.total_shots)}
                       disabled={isPending}
-                      className="border border-stone-800 rounded-lg px-3 py-2 text-sm uppercase tracking-wide text-stone-400 transition hover:border-red-500 hover:text-red-400 disabled:opacity-40"
+                      className="border border-[var(--border)] rounded px-3 py-2 text-sm uppercase tracking-wide text-[var(--text-dim)] transition hover:border-[var(--red)] hover:text-[var(--red)] disabled:opacity-40"
                     >
                       Delete
                     </button>

@@ -12,7 +12,7 @@ export default function AdminFeedback({ feedback }: Props) {
   const [isPending, startTransition] = useTransition();
 
   if (feedback.length === 0) {
-    return <p className="text-sm text-stone-500">No feedback yet.</p>;
+    return <p className="text-sm text-[var(--text-dim)]">No feedback yet.</p>;
   }
 
   function handleRead(id: number) {
@@ -28,26 +28,25 @@ export default function AdminFeedback({ feedback }: Props) {
   }
 
   const unread = feedback.filter(f => !f.read);
-  const read = feedback.filter(f => f.read);
 
   return (
     <div className="space-y-3">
       {unread.length > 0 && (
-        <p className="text-xs font-semibold uppercase tracking-wide text-yellow-300">
+        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--gold)]">
           {unread.length} unread
         </p>
       )}
       {feedback.map(item => (
         <div
           key={item.id}
-          className={`border rounded-lg px-4 py-3 space-y-1 ${
-            item.read ? 'border-stone-800 bg-[#111]' : 'border-yellow-400/30 bg-[#111]'
+          className={`border rounded px-4 py-3 space-y-1 gold-accent ${
+            item.read ? 'border-[var(--border)] bg-[var(--surface)]' : 'border-[var(--gold)]/30 bg-[var(--surface)]'
           }`}
         >
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <p className="font-semibold text-stone-200">{item.name}</p>
-              <p className="text-xs text-stone-500">
+              <p className="font-semibold text-[var(--text-muted)]">{item.name}</p>
+              <p className="text-xs text-[var(--text-dim)]">
                 {new Date(item.created_at).toLocaleString('en-GB', {
                   day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
                 })}
@@ -58,7 +57,7 @@ export default function AdminFeedback({ feedback }: Props) {
                 <button
                   onClick={() => handleRead(item.id)}
                   disabled={isPending}
-                  className="text-xs text-yellow-300 hover:text-yellow-200 disabled:opacity-50"
+                  className="text-xs text-[var(--gold)] hover:text-[var(--gold-hover)] disabled:opacity-50"
                 >
                   Mark read
                 </button>
@@ -66,13 +65,13 @@ export default function AdminFeedback({ feedback }: Props) {
               <button
                 onClick={() => handleDelete(item.id)}
                 disabled={isPending}
-                className="text-xs text-red-400 hover:text-red-300 disabled:opacity-50"
+                className="text-xs text-[var(--red)] hover:text-[var(--red-hover)] disabled:opacity-50"
               >
                 Delete
               </button>
             </div>
           </div>
-          <p className="text-sm text-stone-300 whitespace-pre-wrap">{item.message}</p>
+          <p className="text-sm text-[var(--text-muted)] whitespace-pre-wrap">{item.message}</p>
         </div>
       ))}
     </div>

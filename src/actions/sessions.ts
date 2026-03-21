@@ -10,6 +10,8 @@ import {
   reopenSession as dbReopen,
   updateOppositionScore as dbUpdateScore,
   togglePlayerOpposition as dbToggleOpp,
+  setPlayerPosition as dbSetPosition,
+  togglePlayerQuarter as dbToggleQuarter,
   getTeamById,
   getSessionById,
   updateSessionTeam as dbUpdateSessionTeam,
@@ -121,6 +123,19 @@ export async function removePlayerFromSession(sessionId: number, playerId: numbe
   revalidatePath('/sessions');
   revalidatePath('/stats');
   revalidatePath('/players');
+}
+
+export async function setPlayerPosition(sessionId: number, playerId: number, position: string | null) {
+  await requireCanEdit();
+  dbSetPosition(getDb(), sessionId, playerId, position);
+  revalidatePath(`/sessions/${sessionId}`);
+}
+
+export async function togglePlayerQuarter(sessionId: number, playerId: number, quarter: number) {
+  await requireCanEdit();
+  const added = dbToggleQuarter(getDb(), sessionId, playerId, quarter);
+  revalidatePath(`/sessions/${sessionId}`);
+  return added;
 }
 
 export async function changeSessionTeam(sessionId: number, teamId: number) {

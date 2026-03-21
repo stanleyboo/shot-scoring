@@ -17,7 +17,7 @@ export default function SessionTeamForm({
 
   return (
     <div className="flex items-center gap-2">
-      <label className="text-[11px] font-black uppercase tracking-[0.18em] text-stone-500">
+      <label className="text-[11px] font-black uppercase tracking-[0.18em] text-[var(--text-dim)]">
         Match Team
       </label>
       <select
@@ -33,7 +33,7 @@ export default function SessionTeamForm({
             }
           });
         }}
-        className="bg-[#111] border border-stone-800 rounded-lg px-3 py-2 text-sm text-yellow-300 focus:border-yellow-500 focus:outline-none focus:ring-1 focus:ring-yellow-500/30"
+        className="bg-[var(--surface)] border border-[var(--border)] rounded px-3 py-2 text-sm text-[var(--gold)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
       >
         {teams.map(team => (
           <option key={team.id} value={team.id}>

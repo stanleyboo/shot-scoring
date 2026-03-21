@@ -14,8 +14,8 @@ export default async function PlayersPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <h1 className="text-3xl font-black text-yellow-300">Players</h1>
-        <p className="text-sm text-stone-400">
+        <h1 className="text-3xl font-black text-[var(--gold)] font-[family-name:var(--font-display)] uppercase tracking-wide">Players</h1>
+        <p className="text-sm text-[var(--text-muted)]">
           Club squad list with team-by-team breakdowns. Add extra teams in Admin, then move players here.
         </p>
       </div>

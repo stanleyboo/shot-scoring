@@ -16,7 +16,7 @@ export default function LogoutButton() {
         router.refresh();
       })}
       disabled={isPending}
-      className="border border-stone-800 bg-transparent text-stone-300 rounded-lg px-3 py-1.5 text-sm hover:border-yellow-500 hover:text-yellow-300 disabled:opacity-50 transition-all"
+      className="border border-[var(--border)] bg-transparent text-[var(--text-muted)] rounded px-3 py-1.5 text-sm hover:border-[var(--gold)] hover:text-[var(--gold)] disabled:opacity-50 transition-all"
     >
       Logout
     </button>

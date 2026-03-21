@@ -1,19 +1,33 @@
 @import "tailwindcss";
 
 :root {
+  --gold: #E8B800;
+  --gold-secondary: #C9960C;
+  --gold-hover: #F5CC33;
+  --surface: #1A1A1A;
+  --bg: #0A0A0A;
+  --text: #FAFAFA;
+  --text-muted: #A0A0A0;
+  --text-dim: #666666;
+  --border: #2A2A2A;
+  --border-gold: rgba(232, 184, 0, 0.2);
+  --red: #DC2626;
+  --red-hover: #EF4444;
+  --green: #16A34A;
+
   --page-bg:
-    linear-gradient(90deg, rgba(250, 204, 21, 0.08) 0, rgba(250, 204, 21, 0.08) 24px, transparent 24px, transparent 120px),
-    linear-gradient(180deg, #161616 0%, #0d0d0d 100%);
+    linear-gradient(90deg, rgba(232, 184, 0, 0.06) 0, rgba(232, 184, 0, 0.06) 24px, transparent 24px, transparent 120px),
+    linear-gradient(180deg, #0F0F0F 0%, #0A0A0A 100%);
 }
 
 html {
-  background: #000;
+  background: var(--bg);
 }
 
 body {
   min-height: 100vh;
   background: var(--page-bg);
-  color: #fafaf9;
+  color: var(--text);
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -28,4 +42,14 @@ button {
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* Gold glow hover effect for cards */
+.gold-glow:hover {
+  box-shadow: 0 0 20px rgba(232, 184, 0, 0.15);
+}
+
+/* Gold left border accent */
+.gold-accent {
+  border-left: 3px solid var(--gold);
 }

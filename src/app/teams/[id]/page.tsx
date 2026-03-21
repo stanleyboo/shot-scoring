@@ -47,8 +47,8 @@ export default async function TeamPage({ params }: Props) {
           { label: team.name },
         ]} />
         <div>
-          <h1 className="text-3xl font-black text-yellow-300">{team.name}</h1>
-          <p className="text-sm text-stone-400">Team-level matches, players, and leaderboards.</p>
+          <h1 className="text-3xl font-black text-[var(--gold)] font-[family-name:var(--font-display)] uppercase tracking-wide">{team.name}</h1>
+          <p className="text-sm text-[var(--text-muted)]">Team-level matches, players, and leaderboards.</p>
         </div>
       </div>
 
@@ -60,9 +60,9 @@ export default async function TeamPage({ params }: Props) {
           { label: 'Accuracy', value: formatPct(summary.total_goals, summary.total_attempts) },
           { label: 'Record', value: `${summary.wins}-${summary.draws}-${summary.losses}` },
         ].map(card => (
-          <div key={card.label} className="border-2 border-stone-900 bg-[#111111] p-5">
-            <p className="text-3xl font-black text-white">{card.value}</p>
-            <p className="mt-1 text-xs uppercase tracking-[0.2em] text-stone-500">{card.label}</p>
+          <div key={card.label} className="border-2 border-[var(--border)] bg-[var(--surface)] p-5 gold-accent">
+            <p className="text-3xl font-black text-white font-[family-name:var(--font-display)]">{card.value}</p>
+            <p className="mt-1 text-xs uppercase tracking-[0.2em] text-[var(--text-dim)]">{card.label}</p>
           </div>
         ))}
       </section>
@@ -70,23 +70,23 @@ export default async function TeamPage({ params }: Props) {
       <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-white">Players</h2>
-            <Link href="/players" className="text-sm text-yellow-300 hover:text-yellow-200">
+            <h2 className="text-xl font-bold text-white font-[family-name:var(--font-display)] uppercase">Players</h2>
+            <Link href="/players" className="text-sm text-[var(--gold)] hover:text-[var(--gold-hover)]">
               Club players →
             </Link>
           </div>
-          <div className="border-2 border-stone-900 bg-[#111111]">
-            <ul className="divide-y divide-stone-900">
+          <div className="border-2 border-[var(--border)] bg-[var(--surface)]">
+            <ul className="divide-y divide-[var(--border)]">
               {players.map(player => (
                 <li key={player.id} className="flex items-center justify-between px-4 py-3">
-                  <Link href={`/players/${player.id}`} className="font-medium text-white transition hover:text-yellow-300">
+                  <Link href={`/players/${player.id}`} className="font-medium text-white transition hover:text-[var(--gold)]">
                     {player.name}
                   </Link>
-                  <span className="text-sm text-stone-500">#{player.id}</span>
+                  <span className="text-sm text-[var(--text-dim)]">#{player.id}</span>
                 </li>
               ))}
               {players.length === 0 && (
-                <li className="px-4 py-8 text-center text-stone-500">No players assigned to this team yet.</li>
+                <li className="px-4 py-8 text-center text-[var(--text-dim)]">No players assigned to this team yet.</li>
               )}
             </ul>
           </div>
@@ -94,8 +94,8 @@ export default async function TeamPage({ params }: Props) {
 
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-white">Matches</h2>
-            <Link href="/sessions" className="text-sm text-yellow-300 hover:text-yellow-200">
+            <h2 className="text-xl font-bold text-white font-[family-name:var(--font-display)] uppercase">Matches</h2>
+            <Link href="/sessions" className="text-sm text-[var(--gold)] hover:text-[var(--gold-hover)]">
               Full history →
             </Link>
           </div>
@@ -104,11 +104,11 @@ export default async function TeamPage({ params }: Props) {
               <Link
                 key={result.id}
                 href={`/sessions/${result.id}/summary`}
-                className="flex items-center justify-between border-2 border-stone-900 bg-[#111111] px-4 py-4 transition hover:border-yellow-400 hover:bg-black"
+                className="flex items-center justify-between border-2 border-[var(--border)] bg-[var(--surface)] px-4 py-4 transition hover:border-[var(--gold)] gold-glow"
               >
                 <div>
                   <p className="font-semibold text-white">{result.name ?? 'Training Session'}</p>
-                  <p className="text-sm text-stone-500">
+                  <p className="text-sm text-[var(--text-dim)]">
                     {new Date(result.started_at).toLocaleDateString('en-GB', {
                       weekday: 'short',
                       day: 'numeric',
@@ -117,9 +117,9 @@ export default async function TeamPage({ params }: Props) {
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-black text-white">{result.home} : {result.opp}</p>
+                  <p className="text-lg font-black text-white font-[family-name:var(--font-display)]">{result.home} : {result.opp}</p>
                   <p className={`text-xs font-bold ${
-                    result.outcome === 'W' ? 'text-yellow-300' : result.outcome === 'D' ? 'text-stone-300' : 'text-red-400'
+                    result.outcome === 'W' ? 'text-[var(--gold)]' : result.outcome === 'D' ? 'text-[var(--text-muted)]' : 'text-[var(--red)]'
                   }`}>
                     {result.outcome}
                   </p>
@@ -127,7 +127,7 @@ export default async function TeamPage({ params }: Props) {
               </Link>
             ))}
             {results.length === 0 && (
-              <div className="border-2 border-dashed border-yellow-400/30 bg-black p-8 text-center text-stone-500">
+              <div className="border-2 border-dashed border-[var(--gold)]/30 bg-black p-8 text-center text-[var(--text-dim)]">
                 No completed matches with scorelines yet.
               </div>
             )}
@@ -136,23 +136,23 @@ export default async function TeamPage({ params }: Props) {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-xl font-bold text-white">Team Leaderboards</h2>
+        <h2 className="text-xl font-bold text-white font-[family-name:var(--font-display)] uppercase">Team Leaderboards</h2>
         {(leaderboards.match.length > 0 || leaderboards.career.length > 0) ? (
           <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
             {[...leaderboards.match, ...leaderboards.career].map(board => (
-              <div key={`${board.title}-${board.subtitle}`} className="overflow-hidden border-2 border-stone-900 bg-[#111111]">
-                <div className="border-b-2 border-stone-900 bg-yellow-400 px-4 py-3">
-                  <p className="text-sm font-black uppercase tracking-wide text-black">{board.title}</p>
-                  <p className="text-xs text-black">{board.subtitle}</p>
+              <div key={`${board.title}-${board.subtitle}`} className="overflow-hidden border-2 border-[var(--border)] bg-[var(--surface)]">
+                <div className="border-b-2 border-[var(--border)] bg-[var(--gold)] px-4 py-3">
+                  <p className="text-sm font-black uppercase tracking-wide text-black font-[family-name:var(--font-display)]">{board.title}</p>
+                  <p className="text-xs text-black/70">{board.subtitle}</p>
                 </div>
-                <ul className="divide-y divide-stone-900">
+                <ul className="divide-y divide-[var(--border)]">
                   {board.entries.slice(0, 5).map(entry => (
                     <li key={`${board.title}-${entry.player_id}-${entry.label ?? 'career'}`} className="flex items-center justify-between px-4 py-3">
                       <div className="min-w-0">
-                        <Link href={`/players/${entry.player_id}`} className="block truncate text-sm font-medium text-white transition hover:text-yellow-300">
+                        <Link href={`/players/${entry.player_id}`} className="block truncate text-sm font-medium text-white transition hover:text-[var(--gold)]">
                           {entry.name}
                         </Link>
-                        {entry.label && <p className="truncate text-xs text-stone-500">{entry.label}</p>}
+                        {entry.label && <p className="truncate text-xs text-[var(--text-dim)]">{entry.label}</p>}
                       </div>
                       <span className="text-sm font-bold text-white">
                         {board.format === 'percent' ? `${entry.value}%` : entry.value}
@@ -164,7 +164,7 @@ export default async function TeamPage({ params }: Props) {
             ))}
           </div>
         ) : (
-          <div className="border-2 border-dashed border-yellow-400/30 bg-black p-8 text-center text-stone-500">
+          <div className="border-2 border-dashed border-[var(--gold)]/30 bg-black p-8 text-center text-[var(--text-dim)]">
             Team leaderboards will populate once match data is recorded.
           </div>
         )}
@@ -172,8 +172,8 @@ export default async function TeamPage({ params }: Props) {
 
       {sessions.length > 0 && statTypes.length > 0 && (
         <section className="space-y-2">
-          <h2 className="text-xl font-bold text-white">Tracked Stats</h2>
-          <p className="text-sm text-stone-400">
+          <h2 className="text-xl font-bold text-white font-[family-name:var(--font-display)] uppercase">Tracked Stats</h2>
+          <p className="text-sm text-[var(--text-muted)]">
             Active stat types: {statTypes.map(statType => statType.name).join(', ')}
           </p>
         </section>

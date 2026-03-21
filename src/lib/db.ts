@@ -45,6 +45,9 @@ export interface StatType {
   created_at: string;
 }
 
+export const NETBALL_POSITIONS = ['GS', 'GA', 'WA', 'C', 'WD', 'GD', 'GK'] as const;
+export type Position = typeof NETBALL_POSITIONS[number];
+
 export interface SessionWithStats {
   session: Session;
   players: {
@@ -53,6 +56,8 @@ export interface SessionWithStats {
     made: number;
     attempted: number;
     is_opposition: boolean;
+    position: string | null;
+    quarters_played: number[];
     stat_counts: Record<number, number>;
   }[];
 }
@@ -252,6 +257,24 @@ export function applySchema(db: Database.Database): void {
   if (!statTypeCols.some(col => col.name === 'enabled')) {
     db.exec('ALTER TABLE stat_types ADD COLUMN enabled INTEGER NOT NULL DEFAULT 1');
   }
+
+  // Position column on session_players
+  const spCols2 = db.pragma('table_info(session_players)') as { name: string }[];
+  if (!spCols2.some(col => col.name === 'position')) {
+    db.exec('ALTER TABLE session_players ADD COLUMN position TEXT');
+  }
+
+  // Player quarters participation table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS player_quarters (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id INTEGER NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+      player_id  INTEGER NOT NULL REFERENCES players(id),
+      quarter    INTEGER NOT NULL,
+      UNIQUE(session_id, player_id, quarter)
+    );
+    CREATE INDEX IF NOT EXISTS idx_player_quarters_session ON player_quarters(session_id);
+  `);
 
   db.prepare('UPDATE players SET team_id = ? WHERE team_id IS NULL').run(defaultTeamId);
   db.prepare('UPDATE sessions SET team_id = ? WHERE team_id IS NULL').run(defaultTeamId);
@@ -542,22 +565,35 @@ export function getSessionWithStats(db: Database.Database, sessionId: number): S
          p.id AS player_id,
          p.name,
          sp.is_opposition,
+         sp.position,
          COALESCE(SUM(CASE WHEN sh.scored = 1 THEN 1 ELSE 0 END), 0) AS made,
          COALESCE(COUNT(sh.id), 0) AS attempted
        FROM session_players sp
        JOIN players p ON p.id = sp.player_id
        LEFT JOIN shots sh ON sh.player_id = p.id AND sh.session_id = ?
        WHERE sp.session_id = ?
-       GROUP BY p.id, p.name, sp.is_opposition
+       GROUP BY p.id, p.name, sp.is_opposition, sp.position
        ORDER BY sp.is_opposition ASC, p.name ASC`
     )
     .all(sessionId, sessionId) as {
     player_id: number;
     name: string;
     is_opposition: number;
+    position: string | null;
     made: number;
     attempted: number;
   }[];
+
+  const quarterRows = db
+    .prepare('SELECT player_id, quarter FROM player_quarters WHERE session_id = ? ORDER BY quarter')
+    .all(sessionId) as { player_id: number; quarter: number }[];
+
+  const quarterMap = new Map<number, number[]>();
+  for (const row of quarterRows) {
+    const arr = quarterMap.get(row.player_id) ?? [];
+    arr.push(row.quarter);
+    quarterMap.set(row.player_id, arr);
+  }
 
   const statRows = db
     .prepare(
@@ -583,6 +619,8 @@ export function getSessionWithStats(db: Database.Database, sessionId: number): S
       made: player.made,
       attempted: player.attempted,
       is_opposition: player.is_opposition === 1,
+      position: player.position,
+      quarters_played: quarterMap.get(player.player_id) ?? [],
       stat_counts: statMap.get(player.player_id) ?? {},
     })),
   };
@@ -709,6 +747,49 @@ export function getPlayerQuarterBreakdown(db: Database.Database, sessionId: numb
     ...row,
     stat_counts: statMap.get(`${row.player_id}-${row.quarter}`) ?? {},
   }));
+}
+
+export function setPlayerPosition(db: Database.Database, sessionId: number, playerId: number, position: string | null): void {
+  db.prepare(
+    'UPDATE session_players SET position = ? WHERE session_id = ? AND player_id = ?'
+  ).run(position, sessionId, playerId);
+}
+
+export function setPlayerQuarters(db: Database.Database, sessionId: number, playerId: number, quarters: number[]): void {
+  const run = db.transaction(() => {
+    db.prepare('DELETE FROM player_quarters WHERE session_id = ? AND player_id = ?').run(sessionId, playerId);
+    const insert = db.prepare('INSERT INTO player_quarters (session_id, player_id, quarter) VALUES (?, ?, ?)');
+    for (const q of quarters) insert.run(sessionId, playerId, q);
+  });
+  run();
+}
+
+export function togglePlayerQuarter(db: Database.Database, sessionId: number, playerId: number, quarter: number): boolean {
+  const existing = db.prepare(
+    'SELECT id FROM player_quarters WHERE session_id = ? AND player_id = ? AND quarter = ?'
+  ).get(sessionId, playerId, quarter) as { id: number } | undefined;
+
+  if (existing) {
+    db.prepare('DELETE FROM player_quarters WHERE id = ?').run(existing.id);
+    return false; // removed
+  } else {
+    db.prepare('INSERT INTO player_quarters (session_id, player_id, quarter) VALUES (?, ?, ?)').run(sessionId, playerId, quarter);
+    return true; // added
+  }
+}
+
+export function getPlayerQuartersPlayed(db: Database.Database, sessionId: number): Map<number, number[]> {
+  const rows = db.prepare(
+    'SELECT player_id, quarter FROM player_quarters WHERE session_id = ? ORDER BY quarter'
+  ).all(sessionId) as { player_id: number; quarter: number }[];
+
+  const map = new Map<number, number[]>();
+  for (const row of rows) {
+    const arr = map.get(row.player_id) ?? [];
+    arr.push(row.quarter);
+    map.set(row.player_id, arr);
+  }
+  return map;
 }
 
 export function togglePlayerOpposition(db: Database.Database, sessionId: number, playerId: number): void {

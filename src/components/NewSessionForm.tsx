@@ -63,11 +63,11 @@ export default function NewSessionForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-stone-300">Team</label>
+          <label className="mb-1.5 block text-sm font-medium text-[var(--text-muted)]">Team</label>
           <select
             value={teamId}
             onChange={event => handleTeamChange(event.target.value)}
-            className="w-full bg-[#111] border border-stone-800 rounded-lg px-4 py-3 text-stone-50 focus:border-yellow-500 focus:outline-none focus:ring-1 focus:ring-yellow-500/30"
+            className="w-full bg-[var(--surface)] border border-[var(--border)] rounded px-4 py-3 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
             disabled={isPending}
           >
             {teams.map(team => (
@@ -79,26 +79,26 @@ export default function NewSessionForm({
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-stone-300">Match name</label>
+          <label className="mb-1.5 block text-sm font-medium text-[var(--text-muted)]">Match name</label>
           <input
             type="text"
             value={name}
             onChange={event => setName(event.target.value)}
             placeholder="e.g. Wednesday v Halifax"
-            className="w-full bg-[#111] border border-stone-800 rounded-lg px-4 py-3 text-stone-50 placeholder:text-stone-500 focus:border-yellow-500 focus:outline-none focus:ring-1 focus:ring-yellow-500/30"
+            className="w-full bg-[var(--surface)] border border-[var(--border)] rounded px-4 py-3 text-[var(--text)] placeholder:text-[var(--text-dim)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
             disabled={isPending}
           />
         </div>
       </div>
 
       <div>
-        <p className="mb-2 text-sm font-medium text-stone-300">
+        <p className="mb-2 text-sm font-medium text-[var(--text-muted)]">
           Players ({selected.size} selected)
         </p>
         {teamPlayers.length === 0 ? (
-          <div className="border-2 border-stone-900 bg-black p-6 text-center">
-            <p className="mb-2 text-stone-400">No players in this team yet.</p>
-            <a href="/players" className="text-sm text-yellow-300 hover:text-yellow-200">
+          <div className="border-2 border-[var(--border)] bg-black p-6 text-center">
+            <p className="mb-2 text-[var(--text-muted)]">No players in this team yet.</p>
+            <a href="/players" className="text-sm text-[var(--gold)] hover:text-[var(--gold-hover)]">
               Add players first →
             </a>
           </div>
@@ -109,17 +109,17 @@ export default function NewSessionForm({
                 key={player.id}
                 type="button"
                 onClick={() => togglePlayer(player.id)}
-                className={`flex items-center gap-3 border rounded-lg px-4 py-3.5 text-left transition ${
+                className={`flex items-center gap-3 border rounded px-4 py-3.5 text-left transition ${
                   selected.has(player.id)
-                    ? 'border-yellow-400 bg-[#222000] text-white'
-                    : 'border-stone-900 bg-[#111111] text-stone-200 hover:border-yellow-400'
+                    ? 'border-[var(--gold)] bg-[var(--gold)]/10 text-white'
+                    : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-[var(--gold)]'
                 }`}
               >
                 <div
-                  className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded border-2 ${
+                  className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-sm border-2 ${
                     selected.has(player.id)
-                      ? 'border-yellow-400 bg-yellow-400'
-                      : 'border-stone-600'
+                      ? 'border-[var(--gold)] bg-[var(--gold)]'
+                      : 'border-[var(--text-dim)]'
                   }`}
                 >
                   {selected.has(player.id) && (
@@ -135,12 +135,12 @@ export default function NewSessionForm({
         )}
       </div>
 
-      {error && <p className="text-sm text-red-300">{error}</p>}
+      {error && <p className="text-sm text-[var(--red)]">{error}</p>}
 
       <button
         type="submit"
         disabled={isPending || selected.size === 0 || teamPlayers.length === 0}
-        className="w-full bg-yellow-400 text-black font-bold rounded-lg py-4 text-xl hover:bg-yellow-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 transition-all"
+        className="w-full bg-[var(--gold)] text-black font-bold rounded py-4 text-xl hover:bg-[var(--gold-hover)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 transition-all font-[family-name:var(--font-display)] uppercase tracking-wide"
       >
         {isPending ? 'Starting...' : 'Start Match'}
       </button>

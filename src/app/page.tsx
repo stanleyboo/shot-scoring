@@ -25,16 +25,16 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-6">
-      <section className="border-2 border-yellow-400 rounded-lg bg-black p-5">
+      <section className="border-2 border-[var(--gold)] rounded bg-black p-5">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-yellow-300 sm:text-3xl">{clubName}</h1>
-            <p className="mt-1 text-sm text-stone-400">Track matches, players, and leaderboards.</p>
+            <h1 className="text-2xl font-black tracking-tight text-[var(--gold)] sm:text-3xl font-[family-name:var(--font-display)] uppercase">{clubName}</h1>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">Track matches, players, and leaderboards.</p>
           </div>
           {creator && (
             <Link
               href="/sessions/new"
-              className="flex-shrink-0 bg-yellow-400 px-4 py-2 text-xs font-black uppercase tracking-wide text-black rounded-lg transition hover:bg-yellow-300 sm:px-5 sm:py-2.5 sm:text-sm"
+              className="flex-shrink-0 bg-[var(--gold)] px-4 py-2 text-xs font-black uppercase tracking-wide text-black rounded transition hover:bg-[var(--gold-hover)] sm:px-5 sm:py-2.5 sm:text-sm"
             >
               New Match
             </Link>
@@ -43,11 +43,11 @@ export default async function HomePage() {
       </section>
 
       {results.length === 0 ? (
-        <div className="border border-dashed border-yellow-400/30 bg-[#111] rounded-lg p-12 text-center space-y-4">
-          <h2 className="text-xl font-bold text-stone-300">Welcome to {clubName}</h2>
-          <p className="text-stone-500">Add some players and start your first match to see results here.</p>
+        <div className="border border-dashed border-[var(--gold)]/30 bg-[var(--surface)] rounded p-12 text-center space-y-4">
+          <h2 className="text-xl font-bold text-[var(--text-muted)] font-[family-name:var(--font-display)] uppercase">Welcome to {clubName}</h2>
+          <p className="text-[var(--text-dim)]">Add some players and start your first match to see results here.</p>
           <div className="flex justify-center gap-4">
-            <Link href="/players" className="bg-yellow-400 text-black font-bold rounded-lg px-5 py-2.5 hover:bg-yellow-300 transition-all">
+            <Link href="/players" className="bg-[var(--gold)] text-black font-bold rounded px-5 py-2.5 hover:bg-[var(--gold-hover)] transition-all">
               Add Players
             </Link>
           </div>
@@ -55,8 +55,8 @@ export default async function HomePage() {
       ) : (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-white">Recent Matches</h2>
-            <Link href="/sessions" className="text-sm text-yellow-300 hover:text-yellow-200">
+            <h2 className="text-lg font-bold text-white font-[family-name:var(--font-display)] uppercase">Recent Matches</h2>
+            <Link href="/sessions" className="text-sm text-[var(--gold)] hover:text-[var(--gold-hover)]">
               View all →
             </Link>
           </div>
@@ -65,11 +65,11 @@ export default async function HomePage() {
               <Link
                 key={result.id}
                 href={`/sessions/${result.id}/summary`}
-                className="flex items-center justify-between border border-stone-800 bg-[#111] rounded-lg px-4 py-3 transition hover:border-yellow-400"
+                className="flex items-center justify-between border border-[var(--border)] bg-[var(--surface)] rounded px-4 py-3 transition hover:border-[var(--gold)] gold-glow"
               >
                 <div className="min-w-0">
                   <p className="font-semibold text-white truncate">{result.name ?? 'Training Session'}</p>
-                  <p className="text-xs text-stone-500">
+                  <p className="text-xs text-[var(--text-dim)]">
                     {result.team_name} • {new Date(result.started_at).toLocaleDateString('en-GB', {
                       weekday: 'short',
                       day: 'numeric',
@@ -78,11 +78,11 @@ export default async function HomePage() {
                   </p>
                 </div>
                 <div className="text-right flex-shrink-0 ml-3">
-                  <p className="text-lg font-black text-white tabular-nums">
+                  <p className="text-lg font-black text-white tabular-nums font-[family-name:var(--font-display)]">
                     {result.home} : {result.opp}
                   </p>
                   <p className={`text-xs font-bold ${
-                    result.outcome === 'W' ? 'text-yellow-300' : result.outcome === 'D' ? 'text-stone-300' : 'text-red-400'
+                    result.outcome === 'W' ? 'text-[var(--gold)]' : result.outcome === 'D' ? 'text-[var(--text-muted)]' : 'text-[var(--red)]'
                   }`}>
                     {result.outcome}
                   </p>

@@ -16,28 +16,28 @@ function LeaderboardCard({ board, uniqueOnly }: { board: Leaderboard; uniqueOnly
   }
 
   return (
-    <div className="overflow-hidden border border-stone-800 bg-[#111] rounded-lg">
-      <div className="border-b border-stone-800 bg-yellow-400 px-4 py-3">
-        <h3 className="text-sm font-black uppercase tracking-wide text-black">{board.title}</h3>
-        <p className="text-[11px] text-black">{board.subtitle}</p>
+    <div className="overflow-hidden border border-[var(--border)] bg-[var(--surface)] rounded">
+      <div className="border-b border-[var(--border)] bg-[var(--gold)] px-4 py-3">
+        <h3 className="text-sm font-black uppercase tracking-wide text-black font-[family-name:var(--font-display)]">{board.title}</h3>
+        <p className="text-[11px] text-black/70">{board.subtitle}</p>
       </div>
-      <ul className="divide-y divide-stone-800">
+      <ul className="divide-y divide-[var(--border)]">
         {entries.map((entry, index) => (
           <li key={`${entry.player_id}-${entry.label ?? index}`} className="flex items-center justify-between gap-2 px-4 py-3">
             <div className="flex min-w-0 items-center gap-3">
               <span className={`w-5 text-right text-sm font-bold tabular-nums ${
-                index === 0 ? 'text-yellow-300' : index === 1 ? 'text-stone-300' : index === 2 ? 'text-amber-500' : 'text-stone-600'
+                index === 0 ? 'text-[var(--gold)]' : index === 1 ? 'text-[var(--text-muted)]' : index === 2 ? 'text-[var(--gold-secondary)]' : 'text-[var(--text-dim)]'
               }`}>
                 {index + 1}
               </span>
               <div className="min-w-0">
                 <Link
                   href={`/players/${entry.player_id}`}
-                  className="block truncate text-sm text-white transition-colors hover:text-yellow-300"
+                  className="block truncate text-sm text-white transition-colors hover:text-[var(--gold)]"
                 >
                   {entry.name}
                 </Link>
-                {entry.label && <p className="truncate text-[11px] text-stone-500">{entry.label}</p>}
+                {entry.label && <p className="truncate text-[11px] text-[var(--text-dim)]">{entry.label}</p>}
               </div>
             </div>
             <span className="text-sm font-bold text-white tabular-nums">
@@ -66,15 +66,15 @@ export default function LeaderboardSection({ sections }: { sections: Section[] }
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-black text-yellow-300">Leaderboards</h1>
-          <p className="text-sm text-stone-400">Overall club records and team-by-team breakdowns.</p>
+          <h1 className="text-3xl font-black text-[var(--gold)] font-[family-name:var(--font-display)] uppercase tracking-wide">Leaderboards</h1>
+          <p className="text-sm text-[var(--text-muted)]">Overall club records and team-by-team breakdowns.</p>
         </div>
         <button
           onClick={() => setUniqueOnly(!uniqueOnly)}
-          className={`border px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wide transition ${
+          className={`border px-4 py-2 rounded text-xs font-black uppercase tracking-wide transition ${
             uniqueOnly
-              ? 'border-yellow-400 bg-yellow-400 text-black'
-              : 'border-stone-700 bg-black text-stone-200 hover:border-yellow-400'
+              ? 'border-[var(--gold)] bg-[var(--gold)] text-black'
+              : 'border-[var(--border)] bg-black text-[var(--text-muted)] hover:border-[var(--gold)]'
           }`}
         >
           {uniqueOnly ? 'Best per player' : 'All entries'}
@@ -83,11 +83,11 @@ export default function LeaderboardSection({ sections }: { sections: Section[] }
 
       {visibleSections.map(section => (
         <section key={section.title} className="space-y-4">
-          <h2 className="text-xl font-bold text-white">{section.title}</h2>
+          <h2 className="text-xl font-bold text-white font-[family-name:var(--font-display)] uppercase">{section.title}</h2>
 
           {section.match.length > 0 && (
             <div className="space-y-3">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-stone-500">Single Match</p>
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-dim)]">Single Match</p>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {section.match.map(board => (
                   <LeaderboardCard key={`${section.title}-${board.title}-match`} board={board} uniqueOnly={uniqueOnly} />
@@ -98,7 +98,7 @@ export default function LeaderboardSection({ sections }: { sections: Section[] }
 
           {section.career.length > 0 && (
             <div className="space-y-3">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-stone-500">Career Totals</p>
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--text-dim)]">Career Totals</p>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {section.career.map(board => (
                   <LeaderboardCard key={`${section.title}-${board.title}-career`} board={board} uniqueOnly={uniqueOnly} />

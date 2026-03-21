@@ -8,9 +8,9 @@ export default async function Nav() {
   const clubName = getSetting(getDb(), 'club_name') ?? 'Langwith Netball';
 
   return (
-    <nav className="border-b-2 border-yellow-400 bg-black">
+    <nav className="border-b-2 border-[var(--gold)] bg-[var(--bg)]">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
-        <Link href="/" className="bg-yellow-400 px-1.5 py-1 text-[10px] font-black uppercase tracking-wider text-black transition hover:bg-yellow-300 sm:px-2.5 sm:py-1.5 sm:text-xs">
+        <Link href="/" className="bg-[var(--gold)] px-1.5 py-1 text-[10px] font-bold uppercase tracking-wider text-black transition hover:bg-[var(--gold-hover)] sm:px-2.5 sm:py-1.5 sm:text-xs font-[family-name:var(--font-display)]">
           {clubName}
         </Link>
         <NavLinks isAdmin={admin} />

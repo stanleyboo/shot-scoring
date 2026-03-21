@@ -16,14 +16,14 @@ export default async function SessionsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-black text-yellow-300">Match History</h1>
-          <p className="text-sm text-stone-400">Every match grouped by team.</p>
+          <h1 className="text-3xl font-black text-[var(--gold)] font-[family-name:var(--font-display)] uppercase tracking-wide">Match History</h1>
+          <p className="text-sm text-[var(--text-muted)]">Every match grouped by team.</p>
         </div>
         <div className="flex gap-2">
           {sessions.length > 0 && <ExportAllButton />}
           <Link
             href="/sessions/new"
-            className="bg-yellow-400 rounded-lg px-4 py-2 text-sm font-bold text-black transition hover:bg-yellow-300"
+            className="bg-[var(--gold)] rounded px-4 py-2 text-sm font-bold text-black transition hover:bg-[var(--gold-hover)]"
           >
             + New Match
           </Link>
@@ -31,9 +31,9 @@ export default async function SessionsPage() {
       </div>
 
       {sessions.length === 0 ? (
-        <div className="border border-dashed border-yellow-400/30 bg-[#111] rounded-lg p-12 text-center">
-          <p className="mb-3 text-stone-400">No matches yet.</p>
-          <Link href="/sessions/new" className="text-sm text-yellow-300 hover:text-yellow-200">
+        <div className="border border-dashed border-[var(--gold)]/30 bg-[var(--surface)] rounded p-12 text-center">
+          <p className="mb-3 text-[var(--text-muted)]">No matches yet.</p>
+          <Link href="/sessions/new" className="text-sm text-[var(--gold)] hover:text-[var(--gold-hover)]">
             Start your first match →
           </Link>
         </div>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
-import { getDb, getSessionWithStats, getAllStatTypes, getAllTeams, getSessionQuarterBreakdown, getPlayerQuarterBreakdown } from '@/lib/db';
+import { getDb, getSessionWithStats, getAllStatTypes, getAllTeams, getSessionQuarterBreakdown, getPlayerQuarterBreakdown, getPlayerQuartersPlayed } from '@/lib/db';
 import { isAdmin, canEdit } from '@/lib/auth';
 import RenameSessionForm from '@/components/RenameSessionForm';
 import DeleteSessionButton from '@/components/DeleteSessionButton';
@@ -21,11 +21,11 @@ function pct(made: number, attempted: number) {
 }
 
 function pctColor(made: number, attempted: number) {
-  if (attempted === 0) return 'text-stone-500';
+  if (attempted === 0) return 'text-[var(--text-dim)]';
   const p = made / attempted;
-  if (p >= 0.7) return 'text-yellow-300 font-bold';
+  if (p >= 0.7) return 'text-[var(--gold)] font-bold';
   if (p >= 0.5) return 'text-amber-300 font-bold';
-  return 'text-red-400 font-bold';
+  return 'text-[var(--red)] font-bold';
 }
 
 export default async function SessionSummaryPage({ params }: Props) {
@@ -44,6 +44,7 @@ export default async function SessionSummaryPage({ params }: Props) {
   const teams = getAllTeams(db);
   const quarters = getSessionQuarterBreakdown(db, sessionId);
   const playerQuarters = getPlayerQuarterBreakdown(db, sessionId);
+  const quartersPlayedMap = getPlayerQuartersPlayed(db, sessionId);
   const admin = await isAdmin();
   const editor = await canEdit();
 
@@ -65,6 +66,9 @@ export default async function SessionSummaryPage({ params }: Props) {
   const won = teamMade > oppTotal;
   const drew = teamMade === oppTotal;
 
+  const anyPositions = homePlayers.some(p => p.position);
+  const anyQuarters = Array.from(quartersPlayedMap.values()).some(q => q.length > 0);
+
   function renderPlayerTable(
     rows: typeof players,
     label: string,
@@ -78,64 +82,96 @@ export default async function SessionSummaryPage({ params }: Props) {
       sectionStatTotals[st.id] = rows.reduce((n, p) => n + (p.stat_counts[st.id] ?? 0), 0);
     }
 
+    const showPos = rows.some(p => p.position);
+    const showQtrs = rows.some(p => (quartersPlayedMap.get(p.player_id)?.length ?? 0) > 0);
+
     return (
-      <div className="rounded-lg border border-stone-800 overflow-x-auto">
+      <div className="rounded border border-[var(--border)] overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-[#111]">
+          <thead className="bg-[var(--surface)]">
             <tr>
-              <th className="px-4 py-3 text-left text-sm font-medium text-stone-400 uppercase tracking-wide">Player</th>
-              <th className="px-4 py-3 text-right text-sm font-medium text-stone-400 uppercase tracking-wide">Made</th>
-              <th className="px-4 py-3 text-right text-sm font-medium text-stone-400 uppercase tracking-wide">Att</th>
-              <th className="px-4 py-3 text-right text-sm font-medium text-stone-400 uppercase tracking-wide">%</th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-[var(--text-muted)] uppercase tracking-wide">Player</th>
+              {showPos && <th className="px-3 py-3 text-center text-sm font-medium text-[var(--text-muted)] uppercase tracking-wide">Pos</th>}
+              <th className="px-4 py-3 text-right text-sm font-medium text-[var(--text-muted)] uppercase tracking-wide">Made</th>
+              <th className="px-4 py-3 text-right text-sm font-medium text-[var(--text-muted)] uppercase tracking-wide">Att</th>
+              <th className="px-4 py-3 text-right text-sm font-medium text-[var(--text-muted)] uppercase tracking-wide">%</th>
+              {showQtrs && <th className="px-3 py-3 text-center text-sm font-medium text-[var(--text-muted)] uppercase tracking-wide">Qtrs</th>}
+              {showQtrs && <th className="px-3 py-3 text-right text-sm font-medium text-[var(--text-muted)] uppercase tracking-wide">G/Qtr</th>}
               {activeStatTypes.map(st => (
-                <th key={st.id} className="px-4 py-3 text-right text-sm font-medium text-stone-400 uppercase tracking-wide">
+                <th key={st.id} className="px-4 py-3 text-right text-sm font-medium text-[var(--text-muted)] uppercase tracking-wide">
                   {st.name}
                 </th>
               ))}
               {admin && <th className="px-2 py-3 w-8" />}
             </tr>
           </thead>
-          <tbody className="divide-y divide-stone-800">
-            {rows.map(p => (
-              <tr key={p.player_id} className="bg-black/30 hover:bg-[#111] transition-colors">
-                <td className="px-4 py-3">
-                  <Link
-                    href={`/players/${p.player_id}`}
-                    className="font-medium text-stone-50 hover:text-yellow-300 transition-colors"
-                  >
-                    {p.name}
-                  </Link>
-                </td>
-                <td className="px-4 py-3 text-right text-yellow-300">{p.made}</td>
-                <td className="px-4 py-3 text-right text-stone-300">{p.attempted}</td>
-                <td className={`px-4 py-3 text-right ${pctColor(p.made, p.attempted)}`}>
-                  {pct(p.made, p.attempted)}
-                </td>
-                {activeStatTypes.map(st => (
-                  <td key={st.id} className="px-4 py-3 text-right text-yellow-300">
-                    {p.stat_counts[st.id] ?? 0}
+          <tbody className="divide-y divide-[var(--border)]">
+            {rows.map((p, i) => {
+              const qp = quartersPlayedMap.get(p.player_id) ?? [];
+              const gpq = qp.length > 0 ? (p.made / qp.length).toFixed(1) : null;
+              return (
+                <tr key={p.player_id} className={`${i % 2 === 0 ? 'bg-black/30' : 'bg-[var(--surface)]/50'} hover:bg-[var(--surface)] transition-colors`}>
+                  <td className="px-4 py-3">
+                    <Link
+                      href={`/players/${p.player_id}`}
+                      className="font-medium text-[var(--text)] hover:text-[var(--gold)] transition-colors"
+                    >
+                      {p.name}
+                    </Link>
                   </td>
-                ))}
-                {admin && (
-                  <td className="px-2 py-3 text-center">
-                    <RemovePlayerButton
-                      sessionId={sessionId}
-                      playerId={p.player_id}
-                      playerName={p.name}
-                    />
+                  {showPos && (
+                    <td className="px-3 py-3 text-center">
+                      {p.position ? (
+                        <span className="bg-[var(--gold)]/15 text-[var(--gold)] px-2 py-0.5 text-xs font-bold rounded">{p.position}</span>
+                      ) : (
+                        <span className="text-[var(--text-dim)]">—</span>
+                      )}
+                    </td>
+                  )}
+                  <td className="px-4 py-3 text-right text-[var(--gold)]">{p.made}</td>
+                  <td className="px-4 py-3 text-right text-[var(--text-muted)]">{p.attempted}</td>
+                  <td className={`px-4 py-3 text-right ${pctColor(p.made, p.attempted)}`}>
+                    {pct(p.made, p.attempted)}
                   </td>
-                )}
-              </tr>
-            ))}
-            <tr className="bg-[#111] font-semibold">
-              <td className="px-4 py-3 text-stone-300">{label}</td>
-              <td className="px-4 py-3 text-right text-yellow-300">{totalMade}</td>
-              <td className="px-4 py-3 text-right text-stone-300">{totalAttempted}</td>
+                  {showQtrs && (
+                    <td className="px-3 py-3 text-center text-xs text-[var(--text-muted)]">
+                      {qp.length > 0 ? qp.join(',') : '—'}
+                    </td>
+                  )}
+                  {showQtrs && (
+                    <td className="px-3 py-3 text-right font-semibold text-[var(--gold)]">
+                      {gpq ?? '—'}
+                    </td>
+                  )}
+                  {activeStatTypes.map(st => (
+                    <td key={st.id} className="px-4 py-3 text-right text-[var(--gold)]">
+                      {p.stat_counts[st.id] ?? 0}
+                    </td>
+                  ))}
+                  {admin && (
+                    <td className="px-2 py-3 text-center">
+                      <RemovePlayerButton
+                        sessionId={sessionId}
+                        playerId={p.player_id}
+                        playerName={p.name}
+                      />
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
+            <tr className="bg-[var(--surface)] font-semibold">
+              <td className="px-4 py-3 text-[var(--text-muted)]">{label}</td>
+              {showPos && <td />}
+              <td className="px-4 py-3 text-right text-[var(--gold)]">{totalMade}</td>
+              <td className="px-4 py-3 text-right text-[var(--text-muted)]">{totalAttempted}</td>
               <td className={`px-4 py-3 text-right ${pctColor(totalMade, totalAttempted)}`}>
                 {pct(totalMade, totalAttempted)}
               </td>
+              {showQtrs && <td />}
+              {showQtrs && <td />}
               {activeStatTypes.map(st => (
-                <td key={st.id} className="px-4 py-3 text-right text-yellow-300">
+                <td key={st.id} className="px-4 py-3 text-right text-[var(--gold)]">
                   {sectionStatTotals[st.id]}
                 </td>
               ))}
@@ -162,12 +198,12 @@ export default async function SessionSummaryPage({ params }: Props) {
               <SessionTeamForm sessionId={sessionId} currentTeamId={session.team_id} teams={teams} />
             </div>
           ) : (
-            <h1 className="text-xl font-bold text-white">
+            <h1 className="text-xl font-bold text-white font-[family-name:var(--font-display)] uppercase">
               {session.name ?? 'Training Session'}
             </h1>
           )}
-          <p className="mt-0.5 text-sm text-yellow-300">{session.team_name}</p>
-          <p className="text-sm text-stone-500 mt-0.5">
+          <p className="mt-0.5 text-sm text-[var(--gold)]">{session.team_name}</p>
+          <p className="text-sm text-[var(--text-dim)] mt-0.5">
             {new Date(session.started_at).toLocaleDateString('en-GB', {
               weekday: 'long',
               day: 'numeric',
@@ -180,63 +216,63 @@ export default async function SessionSummaryPage({ params }: Props) {
       </div>
 
       {showScore && (
-        <div className="flex items-center justify-center gap-5 rounded-2xl border border-yellow-400/15 bg-black/55 py-4">
+        <div className="flex items-center justify-center gap-5 rounded border border-[var(--border-gold)] bg-black/55 py-4">
           <div className="text-center">
-            <p className="text-xs font-medium uppercase tracking-wide text-stone-500">{session.team_name}</p>
-            <p className={`text-4xl font-black tabular-nums ${won ? 'text-yellow-300' : drew ? 'text-stone-300' : 'text-white'}`}>{teamMade}</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-dim)]">{session.team_name}</p>
+            <p className={`text-4xl font-black tabular-nums font-[family-name:var(--font-display)] ${won ? 'text-[var(--gold)]' : drew ? 'text-[var(--text-muted)]' : 'text-white'}`}>{teamMade}</p>
           </div>
-          <span className="text-2xl font-bold text-stone-700">:</span>
+          <span className="text-2xl font-bold text-[var(--text-dim)]">:</span>
           <div className="text-center">
-            <p className="text-xs font-medium uppercase tracking-wide text-stone-500">Opposition</p>
-            <p className={`text-4xl font-black tabular-nums ${!won && !drew ? 'text-red-400' : 'text-white'}`}>{oppTotal}</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-dim)]">Opposition</p>
+            <p className={`text-4xl font-black tabular-nums font-[family-name:var(--font-display)] ${!won && !drew ? 'text-[var(--red)]' : 'text-white'}`}>{oppTotal}</p>
           </div>
-          <p className={`text-sm font-bold uppercase tracking-wider ${won ? 'text-yellow-300' : drew ? 'text-stone-300' : 'text-red-400'}`}>
+          <p className={`text-sm font-bold uppercase tracking-wider ${won ? 'text-[var(--gold)]' : drew ? 'text-[var(--text-muted)]' : 'text-[var(--red)]'}`}>
             {won ? 'Win' : drew ? 'Draw' : 'Loss'}
           </p>
         </div>
       )}
 
       {quarters.length > 1 && (
-        <div className="rounded-lg border border-stone-800 overflow-x-auto">
+        <div className="rounded border border-[var(--border)] overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-[#111]">
+            <thead className="bg-[var(--surface)]">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-medium text-stone-400 uppercase tracking-wide">Quarter</th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-stone-400 uppercase tracking-wide">{session.team_name}</th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-stone-400 uppercase tracking-wide">Opp</th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-stone-400 uppercase tracking-wide">%</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-[var(--text-muted)] uppercase tracking-wide">Quarter</th>
+                <th className="px-4 py-3 text-right text-sm font-medium text-[var(--text-muted)] uppercase tracking-wide">{session.team_name}</th>
+                <th className="px-4 py-3 text-right text-sm font-medium text-[var(--text-muted)] uppercase tracking-wide">Opp</th>
+                <th className="px-4 py-3 text-right text-sm font-medium text-[var(--text-muted)] uppercase tracking-wide">%</th>
                 {activeStatTypes.map(st => (
-                  <th key={st.id} className="px-4 py-3 text-right text-sm font-medium text-stone-400 uppercase tracking-wide">
+                  <th key={st.id} className="px-4 py-3 text-right text-sm font-medium text-[var(--text-muted)] uppercase tracking-wide">
                     {st.name}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-stone-800">
-              {quarters.map(q => (
-                <tr key={q.quarter} className="bg-black/30">
-                  <td className="px-4 py-3 font-medium text-stone-300">Q{q.quarter}</td>
-                  <td className="px-4 py-3 text-right text-yellow-300">{q.home_made}</td>
-                  <td className="px-4 py-3 text-right text-stone-300">{q.opp_made}</td>
+            <tbody className="divide-y divide-[var(--border)]">
+              {quarters.map((q, i) => (
+                <tr key={q.quarter} className={i % 2 === 0 ? 'bg-black/30' : 'bg-[var(--surface)]/50'}>
+                  <td className="px-4 py-3 font-medium text-[var(--text-muted)]">Q{q.quarter}</td>
+                  <td className="px-4 py-3 text-right text-[var(--gold)]">{q.home_made}</td>
+                  <td className="px-4 py-3 text-right text-[var(--text-muted)]">{q.opp_made}</td>
                   <td className={`px-4 py-3 text-right ${pctColor(q.home_made, q.home_attempted)}`}>
                     {pct(q.home_made, q.home_attempted)}
                   </td>
                   {activeStatTypes.map(st => (
-                    <td key={st.id} className="px-4 py-3 text-right text-yellow-300">
+                    <td key={st.id} className="px-4 py-3 text-right text-[var(--gold)]">
                       {q.stat_counts[st.id] ?? 0}
                     </td>
                   ))}
                 </tr>
               ))}
-              <tr className="bg-[#111] font-semibold">
-                <td className="px-4 py-3 text-stone-300">Total</td>
-                <td className="px-4 py-3 text-right text-yellow-300">{teamMade}</td>
-                <td className="px-4 py-3 text-right text-stone-300">{oppTotal}</td>
+              <tr className="bg-[var(--surface)] font-semibold">
+                <td className="px-4 py-3 text-[var(--text-muted)]">Total</td>
+                <td className="px-4 py-3 text-right text-[var(--gold)]">{teamMade}</td>
+                <td className="px-4 py-3 text-right text-[var(--text-muted)]">{oppTotal}</td>
                 <td className={`px-4 py-3 text-right ${pctColor(teamMade, teamAttempted)}`}>
                   {pct(teamMade, teamAttempted)}
                 </td>
                 {activeStatTypes.map(st => (
-                  <td key={st.id} className="px-4 py-3 text-right text-yellow-300">
+                  <td key={st.id} className="px-4 py-3 text-right text-[var(--gold)]">
                     {quarters.reduce((n, q) => n + (q.stat_counts[st.id] ?? 0), 0)}
                   </td>
                 ))}
@@ -258,14 +294,14 @@ export default async function SessionSummaryPage({ params }: Props) {
         const qNums = [...new Set(playerQuarters.map(pq => pq.quarter))].sort();
         return (
           <div className="space-y-3">
-            <h2 className="text-sm font-medium uppercase tracking-wider text-stone-500">Per Quarter</h2>
-            <div className="rounded-lg border border-stone-800 overflow-x-auto">
+            <h2 className="text-sm font-medium uppercase tracking-wider text-[var(--text-dim)] font-[family-name:var(--font-display)]">Per Quarter</h2>
+            <div className="rounded border border-[var(--border)] overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-[#111]">
+                <thead className="bg-[var(--surface)]">
                   <tr>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-stone-400 uppercase tracking-wide">Player</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-[var(--text-muted)] uppercase tracking-wide">Player</th>
                     {qNums.map(q => (
-                      <th key={`q${q}-h`} colSpan={2 + activeStatTypes.length} className="px-4 py-3 text-center text-sm font-medium text-stone-400 uppercase tracking-wide border-l border-stone-800">
+                      <th key={`q${q}-h`} colSpan={2 + activeStatTypes.length} className="px-4 py-3 text-center text-sm font-medium text-[var(--text-muted)] uppercase tracking-wide border-l border-[var(--border)]">
                         Q{q}
                       </th>
                     ))}
@@ -274,23 +310,23 @@ export default async function SessionSummaryPage({ params }: Props) {
                     <th className="px-3 py-2" />
                     {qNums.map(q => (
                       <React.Fragment key={`sub-${q}`}>
-                        <th className="px-3 py-2 text-right text-xs text-stone-500 border-l border-stone-800">Goals</th>
-                        <th className="px-3 py-2 text-right text-xs text-stone-500">%</th>
+                        <th className="px-3 py-2 text-right text-xs text-[var(--text-dim)] border-l border-[var(--border)]">Goals</th>
+                        <th className="px-3 py-2 text-right text-xs text-[var(--text-dim)]">%</th>
                         {activeStatTypes.map(st => (
-                          <th key={`${q}-${st.id}`} className="px-3 py-2 text-right text-xs text-stone-500">{st.name}</th>
+                          <th key={`${q}-${st.id}`} className="px-3 py-2 text-right text-xs text-[var(--text-dim)]">{st.name}</th>
                         ))}
                       </React.Fragment>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-stone-800">
-                  {playerIds.map(pid => {
+                <tbody className="divide-y divide-[var(--border)]">
+                  {playerIds.map((pid, i) => {
                     const pRows = playerQuarters.filter(pq => pq.player_id === pid);
                     const playerName = pRows[0]?.name ?? '';
                     return (
-                      <tr key={pid} className="bg-black/30 hover:bg-[#111] transition-colors">
+                      <tr key={pid} className={`${i % 2 === 0 ? 'bg-black/30' : 'bg-[var(--surface)]/50'} hover:bg-[var(--surface)] transition-colors`}>
                         <td className="px-4 py-3">
-                          <Link href={`/players/${pid}`} className="font-medium text-stone-50 hover:text-yellow-300 transition-colors">
+                          <Link href={`/players/${pid}`} className="font-medium text-[var(--text)] hover:text-[var(--gold)] transition-colors">
                             {playerName}
                           </Link>
                         </td>
@@ -298,24 +334,24 @@ export default async function SessionSummaryPage({ params }: Props) {
                           const qData = pRows.find(r => r.quarter === q);
                           return (
                             <React.Fragment key={`${pid}-${q}`}>
-                              <td className="px-3 py-3 text-right border-l border-stone-800">
+                              <td className="px-3 py-3 text-right border-l border-[var(--border)]">
                                 {qData ? (
                                   <>
-                                    <span className="text-yellow-300">{qData.made}</span>
+                                    <span className="text-[var(--gold)]">{qData.made}</span>
                                     {qData.attempted > 0 && (
-                                      <span className="text-stone-500 text-xs ml-1">/{qData.attempted}</span>
+                                      <span className="text-[var(--text-dim)] text-xs ml-1">/{qData.attempted}</span>
                                     )}
                                   </>
                                 ) : (
-                                  <span className="text-stone-700">-</span>
+                                  <span className="text-[var(--text-dim)]">-</span>
                                 )}
                               </td>
-                              <td className={`px-3 py-3 text-right ${qData ? pctColor(qData.made, qData.attempted) : 'text-stone-700'}`}>
+                              <td className={`px-3 py-3 text-right ${qData ? pctColor(qData.made, qData.attempted) : 'text-[var(--text-dim)]'}`}>
                                 {qData ? pct(qData.made, qData.attempted) : '-'}
                               </td>
                               {activeStatTypes.map(st => (
-                                <td key={`${pid}-${q}-${st.id}`} className="px-3 py-3 text-right text-yellow-300">
-                                  {qData ? (qData.stat_counts[st.id] ?? 0) : <span className="text-stone-700">-</span>}
+                                <td key={`${pid}-${q}-${st.id}`} className="px-3 py-3 text-right text-[var(--gold)]">
+                                  {qData ? (qData.stat_counts[st.id] ?? 0) : <span className="text-[var(--text-dim)]">-</span>}
                                 </td>
                               ))}
                             </React.Fragment>
@@ -333,7 +369,7 @@ export default async function SessionSummaryPage({ params }: Props) {
 
       {oppPlayers.length > 0 && (
         <>
-          <h2 className="text-sm font-medium uppercase tracking-wider text-stone-500">Opposition</h2>
+          <h2 className="text-sm font-medium uppercase tracking-wider text-[var(--text-dim)] font-[family-name:var(--font-display)]">Opposition</h2>
           {renderPlayerTable(
             oppPlayers,
             'Total',
@@ -351,14 +387,14 @@ export default async function SessionSummaryPage({ params }: Props) {
         />
         <Link
           href="/sessions"
-          className="flex-1 rounded-lg border border-stone-800 py-3 text-center text-stone-200 transition-colors hover:bg-black/60"
+          className="flex-1 rounded border border-[var(--border)] py-3 text-center text-[var(--text-muted)] transition-colors hover:bg-black/60"
         >
           View History
         </Link>
         {editor && <ReopenSessionButton sessionId={sessionId} />}
         <Link
           href="/sessions/new"
-          className="flex-1 rounded-lg bg-yellow-400 py-3 text-center font-bold text-black transition-colors hover:bg-yellow-300"
+          className="flex-1 rounded bg-[var(--gold)] py-3 text-center font-bold text-black transition-colors hover:bg-[var(--gold-hover)]"
         >
           New Match
         </Link>

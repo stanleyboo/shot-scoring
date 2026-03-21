@@ -39,19 +39,19 @@ export default function ConfirmModal({
 
   const confirmClasses =
     variant === 'danger'
-      ? 'bg-red-600 text-white font-bold rounded-lg px-5 py-2.5 hover:bg-red-500 active:scale-[0.98] transition-all'
-      : 'bg-yellow-400 text-black font-bold rounded-lg px-5 py-2.5 hover:bg-yellow-300 active:scale-[0.98] transition-all';
+      ? 'bg-[var(--red)] text-white font-bold rounded px-5 py-2.5 hover:bg-[var(--red-hover)] active:scale-[0.98] transition-all'
+      : 'bg-[var(--gold)] text-black font-bold rounded px-5 py-2.5 hover:bg-[var(--gold-hover)] active:scale-[0.98] transition-all';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="fixed inset-0 bg-black/70" onClick={onCancel} />
-      <div className="relative w-full max-w-sm rounded-lg border border-stone-800 bg-[#111] p-6 space-y-4">
-        <h3 className="text-lg font-bold text-stone-50">{title}</h3>
-        <p className="text-sm text-stone-400">{message}</p>
+      <div className="relative w-full max-w-sm rounded border border-[var(--border)] bg-[var(--surface)] p-6 space-y-4 gold-accent">
+        <h3 className="text-lg font-bold text-[var(--text)] font-[family-name:var(--font-display)] uppercase tracking-wide">{title}</h3>
+        <p className="text-sm text-[var(--text-muted)]">{message}</p>
         <div className="flex justify-end gap-3 pt-2">
           <button
             onClick={onCancel}
-            className="border border-stone-800 bg-transparent text-stone-300 rounded-lg px-5 py-2.5 hover:border-yellow-500 hover:text-yellow-300 transition-all"
+            className="border border-[var(--border)] bg-transparent text-[var(--text-muted)] rounded px-5 py-2.5 hover:border-[var(--gold)] hover:text-[var(--gold)] transition-all"
           >
             Cancel
           </button>

@@ -23,9 +23,9 @@ export default async function StatsPage() {
       <LeaderboardSection sections={sections} />
 
       {sections.every(s => s.match.length === 0 && s.career.length === 0) && (
-        <div className="border border-dashed border-yellow-400/30 bg-[#111] rounded-lg p-12 text-center">
-          <p className="text-stone-400">Play some matches to see leaderboards.</p>
-          <Link href="/sessions/new" className="mt-3 inline-block text-sm text-yellow-300 hover:text-yellow-200">
+        <div className="border border-dashed border-[var(--gold)]/30 bg-[var(--surface)] rounded p-12 text-center">
+          <p className="text-[var(--text-muted)]">Play some matches to see leaderboards.</p>
+          <Link href="/sessions/new" className="mt-3 inline-block text-sm text-[var(--gold)] hover:text-[var(--gold-hover)]">
             Start a match →
           </Link>
         </div>
@@ -33,7 +33,7 @@ export default async function StatsPage() {
 
       {admin && (
         <div className="space-y-4">
-          <h2 className="text-xl font-bold text-yellow-300">Manage Stat Types</h2>
+          <h2 className="text-xl font-bold text-[var(--gold)] font-[family-name:var(--font-display)] uppercase">Manage Stat Types</h2>
           <AddStatTypeForm />
           <StatTypeList statTypes={statTypes} />
         </div>

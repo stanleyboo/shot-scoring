@@ -35,9 +35,9 @@ export default function ToastProvider({ children }: { children: React.ReactNode 
   }, []);
 
   const borderColor = {
-    success: 'border-green-600',
-    error: 'border-red-600',
-    info: 'border-yellow-400',
+    success: 'border-[var(--green)]',
+    error: 'border-[var(--red)]',
+    info: 'border-[var(--gold)]',
   };
 
   return (
@@ -49,7 +49,7 @@ export default function ToastProvider({ children }: { children: React.ReactNode 
             {toasts.map(t => (
               <div
                 key={t.id}
-                className={`rounded-lg border ${borderColor[t.variant]} bg-[#111] px-4 py-3 text-sm text-stone-50 shadow-lg animate-[fadeIn_0.2s_ease-out]`}
+                className={`rounded border ${borderColor[t.variant]} bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text)] shadow-lg animate-[fadeIn_0.2s_ease-out] gold-accent`}
               >
                 {t.message}
               </div>

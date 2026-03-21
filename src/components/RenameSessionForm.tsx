@@ -29,12 +29,12 @@ export default function RenameSessionForm({ sessionId, currentName }: Props) {
   if (!editing) {
     return (
       <div className="flex items-center gap-2">
-        <h1 className="text-2xl font-bold text-stone-50">
+        <h1 className="text-2xl font-bold text-[var(--text)] font-[family-name:var(--font-display)] uppercase tracking-wide">
           {currentName ?? 'Training Session'}
         </h1>
         <button
           onClick={() => setEditing(true)}
-          className="text-xs text-stone-500 hover:text-stone-300 transition-colors px-2 py-1 rounded"
+          className="text-xs text-[var(--text-dim)] hover:text-[var(--text-muted)] transition-colors px-2 py-1 rounded"
         >
           Rename
         </button>
@@ -51,13 +51,13 @@ export default function RenameSessionForm({ sessionId, currentName }: Props) {
         onChange={e => setValue(e.target.value)}
         placeholder="Session name..."
         maxLength={100}
-        className="bg-[#111] border border-stone-800 rounded-lg px-3 py-1.5 text-lg font-bold text-stone-50 placeholder:text-stone-500 focus:border-yellow-500 focus:outline-none focus:ring-1 focus:ring-yellow-500/30"
+        className="bg-[var(--surface)] border border-[var(--border)] rounded px-3 py-1.5 text-lg font-bold text-[var(--text)] placeholder:text-[var(--text-dim)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
         disabled={isPending}
       />
       <button
         type="submit"
         disabled={isPending}
-        className="bg-yellow-400 text-black font-bold rounded-lg px-3 py-1.5 text-sm hover:bg-yellow-300 active:scale-[0.98] disabled:opacity-50 transition-all"
+        className="bg-[var(--gold)] text-black font-bold rounded px-3 py-1.5 text-sm hover:bg-[var(--gold-hover)] active:scale-[0.98] disabled:opacity-50 transition-all"
       >
         Save
       </button>
@@ -65,7 +65,7 @@ export default function RenameSessionForm({ sessionId, currentName }: Props) {
         type="button"
         onClick={handleCancel}
         disabled={isPending}
-        className="rounded-lg px-3 py-1.5 text-sm text-stone-400 hover:text-stone-200 transition-colors"
+        className="rounded px-3 py-1.5 text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
       >
         Cancel
       </button>
