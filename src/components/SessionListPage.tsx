@@ -6,7 +6,7 @@ import SearchInput from './SearchInput';
 import DeleteSessionButton from './DeleteSessionButton';
 import type { Session, Team } from '@/lib/db';
 
-type SessionRow = Session & { total_shots: number; player_count: number };
+type SessionRow = Session & { total_shots: number; player_count: number; home_score: number; opp_score: number };
 
 interface Props {
   sessions: SessionRow[];
@@ -95,7 +95,15 @@ export default function SessionListPage({ sessions, teams, isAdmin: admin }: Pro
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm text-[var(--text-muted)]">{session.total_shots} shots</p>
+                          {(session.home_score > 0 || session.opp_score > 0) ? (
+                            <p className="text-lg font-black tabular-nums font-[family-name:var(--font-display)]">
+                              <span className={session.home_score > session.opp_score ? 'text-[var(--gold)]' : 'text-[var(--text)]'}>{session.home_score}</span>
+                              <span className="text-[var(--text-dim)] mx-0.5">-</span>
+                              <span className={session.opp_score > session.home_score ? 'text-[var(--red)]' : 'text-[var(--text)]'}>{session.opp_score}</span>
+                            </p>
+                          ) : (
+                            <p className="text-sm text-[var(--text-muted)]">{session.total_shots} shots</p>
+                          )}
                           <p className="text-xs text-[var(--text-dim)]">{session.player_count} players</p>
                         </div>
                       </Link>

@@ -60,8 +60,8 @@ export default function AdminSettings({ settings }: Props) {
         disabled={isPending}
       />
       <Toggle
-        label="Anyone can edit matches"
-        description="When off, only admins can record shots, reopen sessions, and edit scores"
+        label="Anyone can edit ended matches"
+        description="When off, only admins can reopen ended sessions and modify completed match data. Live matches can always be edited by anyone."
         checked={settings.public_can_edit}
         onChange={() => handleToggle('public_can_edit')}
         disabled={isPending}

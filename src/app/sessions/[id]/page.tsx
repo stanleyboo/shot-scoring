@@ -1,6 +1,5 @@
 import { notFound, redirect } from 'next/navigation';
 import { getDb, getSessionWithStats, getAllStatTypes, getAllPlayers } from '@/lib/db';
-import { canEdit } from '@/lib/auth';
 import ScoringBoard from '@/components/ScoringBoard';
 import AddPlayerToSession from '@/components/AddPlayerToSession';
 
@@ -19,11 +18,6 @@ export default async function SessionPage({ params }: Props) {
 
   if (data.session.ended_at) {
     redirect(`/sessions/${sessionId}/summary`);
-  }
-
-  const editor = await canEdit();
-  if (!editor) {
-    redirect('/sessions');
   }
 
   const statTypes = getAllStatTypes(db, true);

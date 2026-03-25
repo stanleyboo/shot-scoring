@@ -1,9 +1,10 @@
 import Link from 'next/link';
-import { getDb, getAllStatTypes, getAllLeaderboards, getAllTeams } from '@/lib/db';
+import { getDb, getAllStatTypes, getAllLeaderboards, getAllTeams, getQuarterLeaderboards } from '@/lib/db';
 import { isAdmin } from '@/lib/auth';
 import AddStatTypeForm from '@/components/AddStatTypeForm';
 import StatTypeList from '@/components/StatTypeList';
 import LeaderboardSection from '@/components/LeaderboardSection';
+import QuarterLeaderboards from '@/components/QuarterLeaderboards';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,10 +18,13 @@ export default async function StatsPage() {
     { title: 'Club Leaderboards', ...clubBoards },
     ...teams.map(team => ({ title: team.name, ...getAllLeaderboards(db, team.id) })),
   ];
+  const quarterBoards = getQuarterLeaderboards(db);
 
   return (
     <div className="space-y-8">
       <LeaderboardSection sections={sections} />
+
+      {quarterBoards.length > 0 && <QuarterLeaderboards quarters={quarterBoards} />}
 
       {sections.every(s => s.match.length === 0 && s.career.length === 0) && (
         <div className="border border-dashed border-[var(--gold)]/30 bg-white/25 backdrop-blur-sm rounded p-12 text-center">

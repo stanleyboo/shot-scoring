@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { getDb, getAllPlayers, getAllTeams, getActiveSession } from '@/lib/db';
+import { getDb, getAllPlayers, getAllTeams } from '@/lib/db';
 import { canCreate } from '@/lib/auth';
 import NewSessionForm from '@/components/NewSessionForm';
 
@@ -11,9 +11,6 @@ export default async function NewSessionPage() {
   if (!creator) redirect('/sessions');
 
   const db = getDb();
-  const active = getActiveSession(db);
-  if (active) redirect(`/sessions/${active.id}`);
-
   const players = getAllPlayers(db);
   const teams = getAllTeams(db);
   return (

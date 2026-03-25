@@ -28,6 +28,7 @@ export interface Session {
   ended_at: string | null;
   opposition_score: number;
   opposition_attempted: number;
+  current_quarter: number;
 }
 
 export interface Shot {
@@ -241,6 +242,9 @@ export function applySchema(db: Database.Database): void {
   const sessionColsCheck2 = db.pragma('table_info(sessions)') as { name: string }[];
   if (!sessionColsCheck2.some(col => col.name === 'deleted_at')) {
     db.exec('ALTER TABLE sessions ADD COLUMN deleted_at TEXT');
+  }
+  if (!sessionColsCheck2.some(col => col.name === 'current_quarter')) {
+    db.exec('ALTER TABLE sessions ADD COLUMN current_quarter INTEGER NOT NULL DEFAULT 1');
   }
 
   const playerColsCheck2 = db.pragma('table_info(players)') as { name: string }[];
@@ -536,14 +540,16 @@ export function getActiveSession(db: Database.Database): Session | null {
 export function getAllSessions(
   db: Database.Database,
   teamId?: number
-): (Session & { player_count: number; total_shots: number })[] {
+): (Session & { player_count: number; total_shots: number; home_score: number; opp_score: number })[] {
   return db
     .prepare(
       `SELECT
          s.*,
          t.name AS team_name,
          COUNT(DISTINCT CASE WHEN sp.is_opposition = 0 THEN sp.player_id END) AS player_count,
-         COUNT(sh.id) AS total_shots
+         COUNT(sh.id) AS total_shots,
+         COALESCE(SUM(CASE WHEN sp.is_opposition = 0 AND sh.scored = 1 THEN 1 ELSE 0 END), 0) AS home_score,
+         s.opposition_score + COALESCE(SUM(CASE WHEN sp.is_opposition = 1 AND sh.scored = 1 THEN 1 ELSE 0 END), 0) AS opp_score
        FROM sessions s
        JOIN teams t ON t.id = s.team_id
        LEFT JOIN session_players sp ON sp.session_id = s.id
@@ -552,7 +558,7 @@ export function getAllSessions(
        GROUP BY s.id
        ORDER BY s.started_at DESC, s.id DESC`
     )
-    .all(teamId ? { teamId } : {}) as (Session & { player_count: number; total_shots: number })[];
+    .all(teamId ? { teamId } : {}) as (Session & { player_count: number; total_shots: number; home_score: number; opp_score: number })[];
 }
 
 export function getSessionWithStats(db: Database.Database, sessionId: number): SessionWithStats | null {
@@ -624,6 +630,10 @@ export function getSessionWithStats(db: Database.Database, sessionId: number): S
       stat_counts: statMap.get(player.player_id) ?? {},
     })),
   };
+}
+
+export function setSessionQuarter(db: Database.Database, sessionId: number, quarter: number): void {
+  db.prepare('UPDATE sessions SET current_quarter = ? WHERE id = ?').run(quarter, sessionId);
 }
 
 export function reopenSession(db: Database.Database, sessionId: number): void {
@@ -1113,6 +1123,52 @@ export function getAllLeaderboards(
     career.push({ title: 'Best Shot %', subtitle: 'Min. 10 attempts', format: 'percent', entries: careerPct });
   }
 
+  // Combined interceptions (L + W) leaderboard
+  const interceptTypes = db.prepare(
+    "SELECT id FROM stat_types WHERE enabled = 1 AND name LIKE 'Interception%'"
+  ).all() as { id: number }[];
+  if (interceptTypes.length > 1) {
+    const ids = interceptTypes.map(t => t.id).join(',');
+    const matchIntercept = db
+      .prepare(
+        `SELECT
+           p.id AS player_id,
+           p.name,
+           COUNT(*) AS value,
+           COALESCE(s.name, 'Training Session') || ' (' || strftime('%d/%m/%y', s.started_at) || ')' AS label
+         FROM stat_events se
+         JOIN players p ON p.id = se.player_id
+         JOIN sessions s ON s.id = se.session_id
+         WHERE se.stat_type_id IN (${ids}) AND s.deleted_at IS NULL${teamId ? ' AND s.team_id = @teamId' : ''}
+         GROUP BY se.session_id, p.id
+         ORDER BY value DESC
+         LIMIT 10`
+      )
+      .all(params) as LeaderboardEntry[];
+    if (matchIntercept.length > 0) {
+      match.push({ title: 'Most Interceptions (Total)', subtitle: 'All interception types combined', entries: matchIntercept });
+    }
+
+    const careerIntercept = db
+      .prepare(
+        `SELECT
+           p.id AS player_id,
+           p.name,
+           COUNT(*) AS value
+         FROM stat_events se
+         JOIN players p ON p.id = se.player_id
+         JOIN sessions s ON s.id = se.session_id
+         WHERE se.stat_type_id IN (${ids}) AND s.deleted_at IS NULL${teamId ? ' AND s.team_id = @teamId' : ''}
+         GROUP BY p.id
+         ORDER BY value DESC
+         LIMIT 10`
+      )
+      .all(params) as LeaderboardEntry[];
+    if (careerIntercept.length > 0) {
+      career.push({ title: 'Most Interceptions (Total)', subtitle: 'All interception types combined', entries: careerIntercept });
+    }
+  }
+
   const statTypes = getAllStatTypes(db, true);
   for (const statType of statTypes) {
     const matchStat = db
@@ -1166,6 +1222,58 @@ export function getAllLeaderboards(
   }
 
   return { match, career };
+}
+
+export function getQuarterLeaderboards(
+  db: Database.Database,
+  teamId?: number
+): { quarter: number; boards: Leaderboard[] }[] {
+  const params = teamId ? { teamId } : {};
+  const results: { quarter: number; boards: Leaderboard[] }[] = [];
+
+  for (const q of [1, 2, 3, 4]) {
+    const boards: Leaderboard[] = [];
+
+    const goals = db
+      .prepare(
+        `SELECT p.id AS player_id, p.name, COUNT(*) AS value
+         FROM shots sh
+         JOIN players p ON p.id = sh.player_id
+         JOIN sessions s ON s.id = sh.session_id
+         WHERE sh.scored = 1 AND sh.quarter = @quarter AND s.deleted_at IS NULL${teamId ? ' AND s.team_id = @teamId' : ''}
+         GROUP BY p.id
+         ORDER BY value DESC
+         LIMIT 5`
+      )
+      .all({ ...params, quarter: q }) as LeaderboardEntry[];
+    if (goals.length > 0) {
+      boards.push({ title: 'Most Goals', subtitle: `Q${q} totals`, entries: goals });
+    }
+
+    const pctBoard = db
+      .prepare(
+        `SELECT p.id AS player_id, p.name,
+           ROUND(SUM(CASE WHEN sh.scored = 1 THEN 1.0 ELSE 0 END) / COUNT(*) * 100) AS value
+         FROM shots sh
+         JOIN players p ON p.id = sh.player_id
+         JOIN sessions s ON s.id = sh.session_id
+         WHERE sh.quarter = @quarter AND s.deleted_at IS NULL${teamId ? ' AND s.team_id = @teamId' : ''}
+         GROUP BY p.id
+         HAVING COUNT(*) >= 5
+         ORDER BY value DESC
+         LIMIT 5`
+      )
+      .all({ ...params, quarter: q }) as LeaderboardEntry[];
+    if (pctBoard.length > 0) {
+      boards.push({ title: 'Best Shot %', subtitle: `Q${q} min. 5 attempts`, format: 'percent', entries: pctBoard });
+    }
+
+    if (boards.length > 0) {
+      results.push({ quarter: q, boards });
+    }
+  }
+
+  return results;
 }
 
 export function getMatchResults(

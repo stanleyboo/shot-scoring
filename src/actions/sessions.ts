@@ -12,6 +12,7 @@ import {
   togglePlayerOpposition as dbToggleOpp,
   setPlayerPosition as dbSetPosition,
   togglePlayerQuarter as dbToggleQuarter,
+  setSessionQuarter as dbSetQuarter,
   getTeamById,
   getSessionById,
   updateSessionTeam as dbUpdateSessionTeam,
@@ -19,7 +20,7 @@ import {
   removePlayerFromSession as dbRemovePlayer,
   addPlayerToSession as dbAddPlayer,
 } from '@/lib/db';
-import { isAdmin, canCreate, canEdit } from '@/lib/auth';
+import { isAdmin, canCreate, canEdit, canEditEnded } from '@/lib/auth';
 
 async function requireAdmin() {
   if (!(await isAdmin())) throw new Error('Unauthorized');
@@ -80,8 +81,12 @@ export async function restoreSession(sessionId: number) {
   revalidatePath('/admin');
 }
 
+async function requireCanEditEnded() {
+  if (!(await canEditEnded())) throw new Error('Unauthorized');
+}
+
 export async function reopenSession(sessionId: number) {
-  await requireCanEdit();
+  await requireCanEditEnded();
   const db = getDb();
   const session = getSessionById(db, sessionId);
   dbReopen(db, sessionId);
@@ -148,6 +153,12 @@ export async function togglePlayerQuarter(sessionId: number, playerId: number, q
   const added = dbToggleQuarter(getDb(), sessionId, playerId, quarter);
   revalidatePath(`/sessions/${sessionId}`);
   return added;
+}
+
+export async function setSessionQuarter(sessionId: number, quarter: number) {
+  await requireCanEdit();
+  dbSetQuarter(getDb(), sessionId, quarter);
+  revalidatePath(`/sessions/${sessionId}`);
 }
 
 export async function changeSessionTeam(sessionId: number, teamId: number) {

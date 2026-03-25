@@ -66,7 +66,13 @@ export async function canCreate(): Promise<boolean> {
   return isAdmin();
 }
 
+/** Can edit active (non-ended) sessions. Everyone can by default. */
 export async function canEdit(): Promise<boolean> {
+  return true;
+}
+
+/** Can edit ended sessions (reopen, modify scores, etc). Only when toggle is on or admin. */
+export async function canEditEnded(): Promise<boolean> {
   const settings = getSettings();
   if (settings.public_can_edit) return true;
   return isAdmin();

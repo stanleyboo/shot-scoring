@@ -2,7 +2,7 @@ import React from 'react';
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getDb, getSessionWithStats, getAllStatTypes, getAllTeams, getAllPlayers, getSessionQuarterBreakdown, getPlayerQuarterBreakdown, getPlayerQuartersPlayed } from '@/lib/db';
-import { isAdmin, canEdit } from '@/lib/auth';
+import { isAdmin, canEditEnded } from '@/lib/auth';
 import RenameSessionForm from '@/components/RenameSessionForm';
 import DeleteSessionButton from '@/components/DeleteSessionButton';
 import ReopenSessionButton from '@/components/ReopenSessionButton';
@@ -47,7 +47,7 @@ export default async function SessionSummaryPage({ params }: Props) {
   const playerQuarters = getPlayerQuarterBreakdown(db, sessionId);
   const quartersPlayedMap = getPlayerQuartersPlayed(db, sessionId);
   const admin = await isAdmin();
-  const editor = await canEdit();
+  const editor = await canEditEnded();
 
   const allPlayers = getAllPlayers(db);
   const playerIdsInSession = new Set(players.map(p => p.player_id));

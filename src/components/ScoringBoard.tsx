@@ -4,7 +4,7 @@ import { useOptimistic, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { recordShot, undoLastShot } from '@/actions/shots';
 import { recordStatEvent, undoLastStatEvent } from '@/actions/stats';
-import { endSession, updateOppositionScore, togglePlayerOpposition, setPlayerPosition, togglePlayerQuarter } from '@/actions/sessions';
+import { endSession, updateOppositionScore, togglePlayerOpposition, setPlayerPosition, togglePlayerQuarter, setSessionQuarter } from '@/actions/sessions';
 import PlayerScoreCard from './PlayerScoreCard';
 import ConfirmModal from './ConfirmModal';
 import { useToast } from './ToastProvider';
@@ -32,8 +32,15 @@ export default function ScoringBoard({ session, players, statTypes }: Props) {
   const [oppAttemptedManual, setOppAttemptedManual] = useState(session.opposition_attempted);
   const [oppHistory, setOppHistory] = useState<({ type: 'scored' | 'missed' } | { type: 'reset'; prevScore: number; prevAttempted: number })[]>([]);
   const [showEndModal, setShowEndModal] = useState(false);
-  const [quarter, setQuarter] = useState(1);
+  const [quarter, setQuarter] = useState(session.current_quarter || 1);
   const { toast } = useToast();
+
+  function handleSetQuarter(q: number) {
+    setQuarter(q);
+    startTransition(async () => {
+      await setSessionQuarter(session.id, q);
+    });
+  }
 
   const [optimisticPlayers, addOptimistic] = useOptimistic(
     players,
@@ -255,7 +262,7 @@ export default function ScoringBoard({ session, players, statTypes }: Props) {
             <button
               key={q}
               type="button"
-              onClick={() => setQuarter(q)}
+              onClick={() => handleSetQuarter(q)}
               className={`px-4 py-2 text-sm font-bold rounded transition-all font-[family-name:var(--font-display)] text-base ${
                 quarter === q
                   ? 'bg-[var(--gold)] text-[var(--bg)]'
