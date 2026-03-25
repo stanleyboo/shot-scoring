@@ -27,7 +27,7 @@ export default async function TeamsPage() {
       {admin && <AddTeamForm />}
 
       {teams.length === 0 ? (
-        <div className="border border-dashed border-[var(--gold)]/30 bg-[var(--surface)] rounded p-12 text-center">
+        <div className="border border-dashed border-[var(--gold)]/30 bg-white/25 backdrop-blur-sm rounded p-12 text-center">
           <p className="text-[var(--text-muted)]">No teams yet. Add one above to get started.</p>
         </div>
       ) : (
@@ -36,7 +36,7 @@ export default async function TeamsPage() {
             <Link
               key={team.id}
               href={`/teams/${team.id}`}
-              className="border border-[var(--border)] bg-[var(--surface)] rounded p-5 transition hover:border-[var(--gold)] gold-glow gold-accent"
+              className="border border-[var(--border)] bg-white/25 backdrop-blur-sm rounded p-5 transition hover:border-[var(--gold)] gold-glow gold-accent"
             >
               <h3 className="text-xl font-bold text-[var(--gold)] font-[family-name:var(--font-display)] uppercase">{team.name}</h3>
               <p className="mt-1 text-sm text-[var(--text-muted)]">
@@ -44,11 +44,11 @@ export default async function TeamsPage() {
               </p>
               <div className="mt-4 grid grid-cols-3 gap-3">
                 <div>
-                  <p className="text-2xl font-black text-white font-[family-name:var(--font-display)]">{team.total_goals}</p>
+                  <p className="text-2xl font-black text-[var(--text)] font-[family-name:var(--font-display)]">{team.total_goals}</p>
                   <p className="text-xs text-[var(--text-dim)]">Goals</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-black text-white font-[family-name:var(--font-display)]">{team.total_attempts}</p>
+                  <p className="text-2xl font-black text-[var(--text)] font-[family-name:var(--font-display)]">{team.total_attempts}</p>
                   <p className="text-xs text-[var(--text-dim)]">Attempts</p>
                 </div>
                 <div>
@@ -57,7 +57,7 @@ export default async function TeamsPage() {
                 </div>
               </div>
               <div className="mt-3 flex items-center gap-2">
-                <span className="bg-[var(--gold)] px-2 py-0.5 text-xs font-black uppercase tracking-wide text-black rounded-sm">
+                <span className="bg-[var(--gold)] px-2 py-0.5 text-xs font-black uppercase tracking-wide text-[var(--bg)] rounded-sm">
                   {team.wins}W-{team.draws}D-{team.losses}L
                 </span>
               </div>

@@ -33,7 +33,7 @@ export default function PlayerStatsChart({ sessions }: { sessions: SessionStat[]
                 className={`h-full transition-all ${barColor}`}
                 style={{ width: `${barW}%` }}
               />
-              <span className="absolute inset-0 flex items-center px-2.5 text-xs font-semibold text-white">
+              <span className="absolute inset-0 flex items-center px-2.5 text-xs font-semibold text-[var(--text)]">
                 {s.attempted === 0 ? '—' : `${pct}% (${s.made}/${s.attempted})`}
               </span>
             </div>

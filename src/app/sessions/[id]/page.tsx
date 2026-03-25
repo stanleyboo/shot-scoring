@@ -1,7 +1,8 @@
 import { notFound, redirect } from 'next/navigation';
-import { getDb, getSessionWithStats, getAllStatTypes } from '@/lib/db';
+import { getDb, getSessionWithStats, getAllStatTypes, getAllPlayers } from '@/lib/db';
 import { canEdit } from '@/lib/auth';
 import ScoringBoard from '@/components/ScoringBoard';
+import AddPlayerToSession from '@/components/AddPlayerToSession';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -22,16 +23,22 @@ export default async function SessionPage({ params }: Props) {
 
   const editor = await canEdit();
   if (!editor) {
-    redirect(`/sessions/${sessionId}/summary`);
+    redirect('/sessions');
   }
 
   const statTypes = getAllStatTypes(db, true);
+  const allPlayers = getAllPlayers(db);
+  const playerIdsInSession = new Set(data.players.map(p => p.player_id));
+  const availablePlayers = allPlayers.filter(p => !playerIdsInSession.has(p.id));
 
   return (
-    <ScoringBoard
-      session={data.session}
-      players={data.players}
-      statTypes={statTypes}
-    />
+    <div className="space-y-4">
+      <ScoringBoard
+        session={data.session}
+        players={data.players}
+        statTypes={statTypes}
+      />
+      <AddPlayerToSession sessionId={sessionId} availablePlayers={availablePlayers} />
+    </div>
   );
 }

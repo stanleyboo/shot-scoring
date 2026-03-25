@@ -48,11 +48,11 @@ export default function PlayerScoreCard({
   const isOnCourt = quarters_played.includes(currentQuarter);
 
   return (
-    <div className={`rounded border-l-3 ${is_opposition ? 'border-l-[var(--red)]' : 'border-l-[var(--gold)]'} border ${is_opposition ? 'border-[var(--red)]/40' : 'border-[var(--border-gold)]'} bg-black/60 p-3 space-y-2 lg:p-1.5 lg:space-y-1 ${!isOnCourt && qtrsCount > 0 ? 'opacity-50' : ''}`}>
+    <div className={`rounded border-l-3 ${is_opposition ? 'border-l-[var(--red)]' : 'border-l-[var(--gold)]'} border ${is_opposition ? 'border-[var(--red)]/40' : 'border-[var(--border-gold)]'} bg-white/25 backdrop-blur-sm p-3 space-y-2 lg:p-1.5 lg:space-y-1 ${!isOnCourt ? 'opacity-50' : ''}`}>
       {/* Header row */}
       <div className="flex items-center justify-between gap-1">
         <div className="flex items-center gap-1.5 min-w-0">
-          <h2 className="text-base font-bold text-white truncate sm:text-lg lg:text-sm font-[family-name:var(--font-display)] uppercase">{name}</h2>
+          <h2 className="text-base font-bold text-[var(--text)] truncate sm:text-lg lg:text-sm font-[family-name:var(--font-display)] uppercase">{name}</h2>
           {/* Position picker */}
           {!is_opposition && (
             <select
@@ -101,7 +101,7 @@ export default function PlayerScoreCard({
               disabled={isPending}
               className={`w-6 h-6 rounded text-[10px] font-bold transition-all lg:w-5 lg:h-5 lg:text-[9px] ${
                 quarters_played.includes(q)
-                  ? 'bg-[var(--gold)] text-black'
+                  ? 'bg-[var(--gold)] text-[var(--bg)]'
                   : 'border border-[var(--border)] text-[var(--text-dim)] hover:border-[var(--gold)]'
               }`}
             >
@@ -119,14 +119,14 @@ export default function PlayerScoreCard({
         <button
           onClick={() => onShot(player_id, true)}
           disabled={isPending}
-          className="flex-1 rounded bg-[var(--gold)] py-3 text-sm font-black text-black hover:bg-[var(--gold-hover)] active:scale-95 disabled:opacity-50 transition-all min-h-[44px] sm:text-base lg:py-1 lg:text-[11px] lg:min-h-0"
+          className="flex-1 rounded bg-[var(--green)] py-3 text-sm font-black text-[var(--text)] hover:bg-green-500 active:scale-95 disabled:opacity-50 transition-all min-h-[44px] sm:text-base lg:py-1 lg:text-[11px] lg:min-h-0"
         >
           SCORED
         </button>
         <button
           onClick={() => onShot(player_id, false)}
           disabled={isPending}
-          className="flex-1 rounded bg-[var(--red)] py-3 text-sm font-black text-white hover:bg-[var(--red-hover)] active:scale-95 disabled:opacity-50 transition-all min-h-[44px] sm:text-base lg:py-1 lg:text-[11px] lg:min-h-0"
+          className="flex-1 rounded bg-[var(--red)] py-3 text-sm font-black text-[var(--text)] hover:bg-[var(--red-hover)] active:scale-95 disabled:opacity-50 transition-all min-h-[44px] sm:text-base lg:py-1 lg:text-[11px] lg:min-h-0"
         >
           MISSED
         </button>
@@ -134,7 +134,7 @@ export default function PlayerScoreCard({
           onClick={() => onUndo(player_id)}
           disabled={isPending || attempted === 0}
           title="Undo last shot"
-          className="rounded border border-[var(--border-gold)] bg-black px-2.5 py-3 text-base text-[var(--text-muted)] hover:bg-black/80 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 transition-all min-h-[44px] lg:px-1.5 lg:py-1 lg:text-xs lg:min-h-0"
+          className="rounded border border-[var(--border-gold)] bg-white/25 backdrop-blur-sm px-2.5 py-3 text-base text-[var(--text-muted)] hover:bg-white/20 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 transition-all min-h-[44px] lg:px-1.5 lg:py-1 lg:text-xs lg:min-h-0"
         >
           ↩
         </button>
@@ -148,22 +148,22 @@ export default function PlayerScoreCard({
             return (
               <div
                 key={st.id}
-                className="flex items-center overflow-hidden rounded border border-[var(--gold)]/10 bg-black/70"
+                className="flex items-center overflow-hidden rounded border border-[var(--gold)]/10 bg-white/25 backdrop-blur-sm min-w-0"
               >
                 <button
                   onClick={() => onStatEvent(player_id, st.id)}
                   disabled={isPending}
-                  className="flex min-h-[40px] flex-1 items-center justify-between gap-1 px-2.5 py-2 text-sm text-[var(--text-muted)] transition-all hover:bg-[var(--gold)]/10 active:scale-[0.97] active:bg-[var(--gold)]/15 disabled:opacity-50 lg:min-h-0 lg:px-2 lg:py-0.5 lg:text-xs"
+                  className="flex min-h-[40px] min-w-0 flex-1 items-center gap-1 px-2 py-2 text-sm text-[var(--text-muted)] transition-all hover:bg-[var(--gold)]/10 active:scale-[0.97] active:bg-[var(--gold)]/15 disabled:opacity-50 lg:min-h-0 lg:px-1.5 lg:py-0.5 lg:text-xs"
                   title={`Add ${st.name}`}
                 >
-                  <span className="truncate text-[var(--text-dim)]">{st.name}</span>
-                  <span className="font-bold text-[var(--gold)] tabular-nums">{count}</span>
+                  <span className="truncate text-[var(--text-dim)] min-w-0 flex-1 text-left text-xs">{st.name}</span>
+                  <span className="font-bold text-[var(--gold)] tabular-nums flex-shrink-0">{count}</span>
                 </button>
                 <button
                   onClick={() => onUndoStat(player_id, st.id)}
                   disabled={isPending || count === 0}
                   title={`Undo ${st.name}`}
-                  className="min-h-[40px] border-l border-[var(--gold)]/10 px-1.5 py-2 text-sm text-[var(--text-dim)] transition-all hover:bg-[var(--gold)]/10 hover:text-[var(--text-muted)] active:bg-[var(--gold)]/15 disabled:cursor-not-allowed disabled:opacity-30 lg:min-h-0 lg:px-1 lg:py-0.5 lg:text-xs"
+                  className="min-h-[40px] flex-shrink-0 border-l border-[var(--gold)]/10 px-2 py-2 text-sm text-[var(--text-dim)] transition-all hover:bg-[var(--gold)]/10 hover:text-[var(--text-muted)] active:bg-[var(--gold)]/15 disabled:cursor-not-allowed disabled:opacity-30 lg:min-h-0 lg:px-1.5 lg:py-0.5 lg:text-xs"
                 >
                   ↩
                 </button>

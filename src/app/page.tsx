@@ -25,7 +25,7 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-6">
-      <section className="border-2 border-[var(--gold)] rounded bg-black p-5">
+      <section className="border-2 border-[var(--gold)] rounded bg-white/25 backdrop-blur-sm p-5">
         <div className="flex items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-black tracking-tight text-[var(--gold)] sm:text-3xl font-[family-name:var(--font-display)] uppercase">{clubName}</h1>
@@ -34,7 +34,7 @@ export default async function HomePage() {
           {creator && (
             <Link
               href="/sessions/new"
-              className="flex-shrink-0 bg-[var(--gold)] px-4 py-2 text-xs font-black uppercase tracking-wide text-black rounded transition hover:bg-[var(--gold-hover)] sm:px-5 sm:py-2.5 sm:text-sm"
+              className="flex-shrink-0 bg-[var(--gold)] px-4 py-2 text-xs font-black uppercase tracking-wide text-[var(--bg)] rounded transition hover:bg-[var(--gold-hover)] sm:px-5 sm:py-2.5 sm:text-sm"
             >
               New Match
             </Link>
@@ -43,11 +43,11 @@ export default async function HomePage() {
       </section>
 
       {results.length === 0 ? (
-        <div className="border border-dashed border-[var(--gold)]/30 bg-[var(--surface)] rounded p-12 text-center space-y-4">
+        <div className="border border-dashed border-[var(--gold)]/30 bg-white/25 backdrop-blur-sm rounded p-12 text-center space-y-4">
           <h2 className="text-xl font-bold text-[var(--text-muted)] font-[family-name:var(--font-display)] uppercase">Welcome to {clubName}</h2>
           <p className="text-[var(--text-dim)]">Add some players and start your first match to see results here.</p>
           <div className="flex justify-center gap-4">
-            <Link href="/players" className="bg-[var(--gold)] text-black font-bold rounded px-5 py-2.5 hover:bg-[var(--gold-hover)] transition-all">
+            <Link href="/players" className="bg-[var(--gold)] text-[var(--bg)] font-bold rounded px-5 py-2.5 hover:bg-[var(--gold-hover)] transition-all">
               Add Players
             </Link>
           </div>
@@ -55,7 +55,7 @@ export default async function HomePage() {
       ) : (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-white font-[family-name:var(--font-display)] uppercase">Recent Matches</h2>
+            <h2 className="text-lg font-bold text-[var(--text)] font-[family-name:var(--font-display)] uppercase">Recent Matches</h2>
             <Link href="/sessions" className="text-sm text-[var(--gold)] hover:text-[var(--gold-hover)]">
               View all →
             </Link>
@@ -65,10 +65,10 @@ export default async function HomePage() {
               <Link
                 key={result.id}
                 href={`/sessions/${result.id}/summary`}
-                className="flex items-center justify-between border border-[var(--border)] bg-[var(--surface)] rounded px-4 py-3 transition hover:border-[var(--gold)] gold-glow"
+                className="flex items-center justify-between border border-[var(--border)] bg-white/25 backdrop-blur-sm rounded px-4 py-3 transition hover:border-[var(--gold)] gold-glow"
               >
                 <div className="min-w-0">
-                  <p className="font-semibold text-white truncate">{result.name ?? 'Training Session'}</p>
+                  <p className="font-semibold text-[var(--text)] truncate">{result.name ?? 'Training Session'}</p>
                   <p className="text-xs text-[var(--text-dim)]">
                     {result.team_name} • {new Date(result.started_at).toLocaleDateString('en-GB', {
                       weekday: 'short',
@@ -78,7 +78,7 @@ export default async function HomePage() {
                   </p>
                 </div>
                 <div className="text-right flex-shrink-0 ml-3">
-                  <p className="text-lg font-black text-white tabular-nums font-[family-name:var(--font-display)]">
+                  <p className="text-lg font-black text-[var(--text)] tabular-nums font-[family-name:var(--font-display)]">
                     {result.home} : {result.opp}
                   </p>
                   <p className={`text-xs font-bold ${

@@ -33,7 +33,7 @@ export default function SessionTeamForm({
             }
           });
         }}
-        className="bg-[var(--surface)] border border-[var(--border)] rounded px-3 py-2 text-sm text-[var(--gold)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
+        className="bg-white/25 backdrop-blur-sm border border-[var(--border)] rounded px-3 py-2 text-sm text-[var(--gold)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
       >
         {teams.map(team => (
           <option key={team.id} value={team.id}>

@@ -74,14 +74,14 @@ export default function PlayerList({
 
   if (players.length === 0) {
     return (
-      <p className="border border-[var(--border)] bg-[var(--surface)] rounded px-6 py-8 text-center text-sm uppercase tracking-[0.18em] text-[var(--text-dim)]">
+      <p className="border border-[var(--border)] bg-white/25 backdrop-blur-sm rounded px-6 py-8 text-center text-sm uppercase tracking-[0.18em] text-[var(--text-dim)]">
         No players yet.
       </p>
     );
   }
 
   return (
-    <ul className="border border-[var(--border)] bg-[var(--surface)] rounded overflow-hidden">
+    <ul className="border border-[var(--border)] bg-white/25 backdrop-blur-sm rounded overflow-hidden">
       {players.map(player => (
         <li key={player.id} className="border-t border-[var(--border)] first:border-t-0">
           <div className="flex flex-col gap-3 px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
@@ -93,13 +93,13 @@ export default function PlayerList({
                   value={editName}
                   onChange={event => setEditName(event.target.value)}
                   maxLength={50}
-                  className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
+                  className="flex-1 bg-white/25 backdrop-blur-sm border border-[var(--border)] rounded px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
                   disabled={isPending}
                 />
                 <button
                   type="submit"
                   disabled={isPending || !editName.trim()}
-                  className="bg-[var(--gold)] text-black font-bold rounded px-3 py-2 text-sm hover:bg-[var(--gold-hover)] active:scale-[0.98] disabled:opacity-50 transition-all"
+                  className="bg-[var(--gold)] text-[var(--bg)] font-bold rounded px-3 py-2 text-sm hover:bg-[var(--gold-hover)] active:scale-[0.98] disabled:opacity-50 transition-all"
                 >
                   Save
                 </button>
@@ -115,12 +115,7 @@ export default function PlayerList({
             ) : (
               <div className="flex min-w-0 flex-1 flex-col gap-2 lg:flex-row lg:items-center">
                 <div className="flex min-w-0 items-center gap-2">
-                  <span className="truncate text-lg font-bold text-white">{player.name}</span>
-                  {player.total_shots > 0 && (
-                    <span className="bg-[var(--border)] px-2 py-1 text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
-                      {player.total_shots} shots
-                    </span>
-                  )}
+                  <span className="truncate text-lg font-bold text-[var(--text)]">{player.name}</span>
                 </div>
                 {canEdit ? (
                   <div className="flex items-center gap-2">
@@ -131,7 +126,7 @@ export default function PlayerList({
                       value={player.team_id}
                       onChange={event => handleMove(player.id, event.target.value)}
                       disabled={isPending}
-                      className="bg-[var(--surface)] border border-[var(--border)] rounded px-3 py-2 text-sm text-[var(--gold)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
+                      className="bg-white/25 backdrop-blur-sm border border-[var(--border)] rounded px-3 py-2 text-sm text-[var(--gold)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
                     >
                       {teams.map(team => (
                         <option key={team.id} value={team.id}>
@@ -142,7 +137,7 @@ export default function PlayerList({
                   </div>
                 ) : (
                   player.team_name && (
-                    <span className="w-fit bg-[var(--gold)] px-2 py-1 text-xs font-black uppercase tracking-wide text-black">
+                    <span className="w-fit bg-[var(--gold)] px-2 py-1 text-xs font-black uppercase tracking-wide text-[var(--bg)]">
                       {player.team_name}
                     </span>
                   )
@@ -154,7 +149,7 @@ export default function PlayerList({
               <div className="flex items-center gap-3 lg:flex-shrink-0">
                 <Link
                   href={`/players/${player.id}`}
-                  className="bg-[var(--gold)] px-3 py-2 text-sm font-black uppercase tracking-wide text-black transition hover:bg-[var(--gold-hover)]"
+                  className="bg-[var(--gold)] px-3 py-2 text-sm font-black uppercase tracking-wide text-[var(--bg)] transition hover:bg-[var(--gold-hover)]"
                 >
                   Stats
                 </Link>

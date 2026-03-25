@@ -17,6 +17,7 @@ import {
   updateSessionTeam as dbUpdateSessionTeam,
   restoreSession as dbRestore,
   removePlayerFromSession as dbRemovePlayer,
+  addPlayerToSession as dbAddPlayer,
 } from '@/lib/db';
 import { isAdmin, canCreate, canEdit } from '@/lib/auth';
 
@@ -112,6 +113,17 @@ export async function renameSession(sessionId: number, name: string) {
   revalidatePath(`/sessions/${sessionId}/summary`);
   revalidatePath('/sessions');
   if (session) revalidatePath(`/teams/${session.team_id}`);
+}
+
+export async function addPlayerToSession(sessionId: number, playerId: number) {
+  await requireCanEdit();
+  const db = getDb();
+  dbAddPlayer(db, sessionId, playerId);
+  revalidatePath(`/sessions/${sessionId}`);
+  revalidatePath(`/sessions/${sessionId}/summary`);
+  revalidatePath('/sessions');
+  revalidatePath('/stats');
+  revalidatePath('/players');
 }
 
 export async function removePlayerFromSession(sessionId: number, playerId: number) {

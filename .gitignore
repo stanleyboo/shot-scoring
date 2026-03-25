@@ -50,3 +50,5 @@ data/*.db-shm
 .env.local
 .env.production.local
 .superpowers/
+src/.next/
+src/tsconfig.json

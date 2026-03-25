@@ -64,13 +64,13 @@ export default function StatTypeList({ statTypes }: { statTypes: StatType[] }) {
                 value={editName}
                 onChange={e => setEditName(e.target.value)}
                 maxLength={50}
-                className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded px-3 py-1.5 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
+                className="flex-1 bg-white/25 backdrop-blur-sm border border-[var(--border)] rounded px-3 py-1.5 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
                 disabled={isPending}
               />
               <button
                 type="submit"
                 disabled={isPending || !editName.trim()}
-                className="bg-[var(--gold)] text-black font-bold rounded px-3 py-1.5 text-sm hover:bg-[var(--gold-hover)] active:scale-[0.98] disabled:opacity-50 transition-all"
+                className="bg-[var(--gold)] text-[var(--bg)] font-bold rounded px-3 py-1.5 text-sm hover:bg-[var(--gold-hover)] active:scale-[0.98] disabled:opacity-50 transition-all"
               >
                 Save
               </button>
@@ -103,7 +103,7 @@ export default function StatTypeList({ statTypes }: { statTypes: StatType[] }) {
                   st.enabled ? 'bg-[var(--gold)]' : 'bg-[var(--border)]'
                 } disabled:opacity-50`}
               >
-                <span className={`absolute top-0.5 h-5 w-5 rounded-full ${st.enabled ? 'bg-black' : 'bg-white'} transition-transform ${
+                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-[var(--bg)] shadow transition-transform ${
                   st.enabled ? 'left-[18px]' : 'left-0.5'
                 }`} />
               </button>

@@ -17,7 +17,7 @@ function Toggle({ label, description, checked, onChange, disabled }: {
   disabled: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded border border-[var(--border)] bg-[var(--surface)] p-4 gold-accent">
+    <div className="flex items-center justify-between gap-4 rounded border border-[var(--border)] bg-white/25 backdrop-blur-sm p-4 gold-accent">
       <div>
         <p className="font-medium text-[var(--text)]">{label}</p>
         <p className="text-sm text-[var(--text-dim)]">{description}</p>
@@ -29,7 +29,7 @@ function Toggle({ label, description, checked, onChange, disabled }: {
           checked ? 'bg-[var(--gold)]' : 'bg-[var(--border)]'
         } disabled:opacity-50`}
       >
-        <span className={`absolute top-0.5 h-6 w-6 rounded-full ${checked ? 'bg-black' : 'bg-white'} transition-transform ${
+        <span className={`absolute top-0.5 h-6 w-6 rounded-full bg-[var(--bg)] shadow transition-transform ${
           checked ? 'left-[22px]' : 'left-0.5'
         }`} />
       </button>

@@ -40,7 +40,7 @@ export default function FeedbackForm() {
           placeholder="Name"
           required
           disabled={isPending}
-          className="w-full bg-[var(--surface)] border border-[var(--border)] rounded px-3 py-2 text-[var(--text)] placeholder:text-[var(--text-dim)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30 disabled:opacity-50"
+          className="w-full bg-white/25 backdrop-blur-sm border border-[var(--border)] rounded px-3 py-2 text-[var(--text)] placeholder:text-[var(--text-dim)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30 disabled:opacity-50"
         />
       </div>
       <div>
@@ -55,13 +55,13 @@ export default function FeedbackForm() {
           required
           rows={4}
           disabled={isPending}
-          className="w-full bg-[var(--surface)] border border-[var(--border)] rounded px-3 py-2 text-[var(--text)] placeholder:text-[var(--text-dim)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30 disabled:opacity-50 resize-none"
+          className="w-full bg-white/25 backdrop-blur-sm border border-[var(--border)] rounded px-3 py-2 text-[var(--text)] placeholder:text-[var(--text-dim)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30 disabled:opacity-50 resize-none"
         />
       </div>
       <button
         type="submit"
         disabled={isPending || !name.trim() || !message.trim()}
-        className="bg-[var(--gold)] text-black font-bold rounded px-5 py-2.5 hover:bg-[var(--gold-hover)] active:scale-[0.98] disabled:opacity-50 transition-all"
+        className="bg-[var(--gold)] text-[var(--bg)] font-bold rounded px-5 py-2.5 hover:bg-[var(--gold-hover)] active:scale-[0.98] disabled:opacity-50 transition-all"
       >
         {isPending ? 'Sending...' : 'Send Feedback'}
       </button>

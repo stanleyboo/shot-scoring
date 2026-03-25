@@ -51,13 +51,13 @@ export default function RenameSessionForm({ sessionId, currentName }: Props) {
         onChange={e => setValue(e.target.value)}
         placeholder="Session name..."
         maxLength={100}
-        className="bg-[var(--surface)] border border-[var(--border)] rounded px-3 py-1.5 text-lg font-bold text-[var(--text)] placeholder:text-[var(--text-dim)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
+        className="bg-white/25 backdrop-blur-sm border border-[var(--border)] rounded px-3 py-1.5 text-lg font-bold text-[var(--text)] placeholder:text-[var(--text-dim)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
         disabled={isPending}
       />
       <button
         type="submit"
         disabled={isPending}
-        className="bg-[var(--gold)] text-black font-bold rounded px-3 py-1.5 text-sm hover:bg-[var(--gold-hover)] active:scale-[0.98] disabled:opacity-50 transition-all"
+        className="bg-[var(--gold)] text-[var(--bg)] font-bold rounded px-3 py-1.5 text-sm hover:bg-[var(--gold-hover)] active:scale-[0.98] disabled:opacity-50 transition-all"
       >
         Save
       </button>

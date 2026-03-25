@@ -354,20 +354,20 @@ export function getTeamSummaries(db: Database.Database): TeamSummary[] {
     const base = db.prepare(
       `SELECT
          (SELECT COUNT(*) FROM players WHERE team_id = @teamId) AS player_count,
-         (SELECT COUNT(*) FROM sessions WHERE team_id = @teamId AND ended_at IS NOT NULL) AS session_count,
+         (SELECT COUNT(*) FROM sessions WHERE team_id = @teamId AND ended_at IS NOT NULL AND deleted_at IS NULL) AS session_count,
          COALESCE((
            SELECT SUM(CASE WHEN sh.scored = 1 THEN 1 ELSE 0 END)
            FROM shots sh
            JOIN sessions s ON s.id = sh.session_id
            JOIN session_players sp ON sp.session_id = sh.session_id AND sp.player_id = sh.player_id
-           WHERE s.team_id = @teamId AND sp.is_opposition = 0
+           WHERE s.team_id = @teamId AND sp.is_opposition = 0 AND s.deleted_at IS NULL
          ), 0) AS total_goals,
          COALESCE((
            SELECT COUNT(*)
            FROM shots sh
            JOIN sessions s ON s.id = sh.session_id
            JOIN session_players sp ON sp.session_id = sh.session_id AND sp.player_id = sh.player_id
-           WHERE s.team_id = @teamId AND sp.is_opposition = 0
+           WHERE s.team_id = @teamId AND sp.is_opposition = 0 AND s.deleted_at IS NULL
          ), 0) AS total_attempts`
     ).get({ teamId: team.id }) as {
       player_count: number;
@@ -421,7 +421,7 @@ export function getAllPlayersWithShots(db: Database.Database, includeArchived = 
        COALESCE(COUNT(s.id), 0) AS total_shots
      FROM players p
      JOIN teams t ON t.id = p.team_id
-     LEFT JOIN shots s ON s.player_id = p.id
+     LEFT JOIN shots s ON s.player_id = p.id AND s.session_id IN (SELECT id FROM sessions WHERE deleted_at IS NULL)
      ${where}
      GROUP BY p.id
      ORDER BY t.name ASC, p.name ASC`
@@ -646,6 +646,12 @@ export function updateSessionTeam(db: Database.Database, sessionId: number, team
   if (result.changes === 0) throw new Error(`Session ${sessionId} not found`);
 }
 
+export function addPlayerToSession(db: Database.Database, sessionId: number, playerId: number): void {
+  const existing = db.prepare('SELECT 1 FROM session_players WHERE session_id = ? AND player_id = ?').get(sessionId, playerId);
+  if (existing) throw new Error('Player already in this session');
+  db.prepare('INSERT INTO session_players (session_id, player_id) VALUES (?, ?)').run(sessionId, playerId);
+}
+
 export function removePlayerFromSession(db: Database.Database, sessionId: number, playerId: number): void {
   const run = db.transaction(() => {
     db.prepare('DELETE FROM shots WHERE session_id = ? AND player_id = ?').run(sessionId, playerId);
@@ -711,21 +717,61 @@ export interface PlayerQuarterStats {
 }
 
 export function getPlayerQuarterBreakdown(db: Database.Database, sessionId: number): PlayerQuarterStats[] {
-  const shotRows = db.prepare(
-    `SELECT
-       sp.player_id,
-       p.name,
-       sh.quarter,
-       COALESCE(SUM(CASE WHEN sh.scored = 1 THEN 1 ELSE 0 END), 0) AS made,
-       COUNT(sh.id) AS attempted
+  // Build a complete grid: every home player × every quarter they were on court OR had shots/stats in
+  // 1. Get all quarters from player_quarters, shots, and stat_events
+  const courtQuarters = db.prepare(
+    `SELECT DISTINCT pq.player_id, pq.quarter
+     FROM player_quarters pq
+     JOIN session_players sp ON sp.session_id = pq.session_id AND sp.player_id = pq.player_id
+     WHERE pq.session_id = ? AND sp.is_opposition = 0`
+  ).all(sessionId) as { player_id: number; quarter: number }[];
+
+  const shotQuarters = db.prepare(
+    `SELECT DISTINCT sh.player_id, sh.quarter
+     FROM shots sh
+     JOIN session_players sp ON sp.session_id = sh.session_id AND sp.player_id = sh.player_id
+     WHERE sh.session_id = ? AND sp.is_opposition = 0`
+  ).all(sessionId) as { player_id: number; quarter: number }[];
+
+  const statQuarters = db.prepare(
+    `SELECT DISTINCT se.player_id, se.quarter
+     FROM stat_events se
+     JOIN session_players sp ON sp.session_id = se.session_id AND sp.player_id = se.player_id
+     WHERE se.session_id = ? AND sp.is_opposition = 0`
+  ).all(sessionId) as { player_id: number; quarter: number }[];
+
+  // Merge all player-quarter combos
+  const pqSet = new Set<string>();
+  for (const r of [...courtQuarters, ...shotQuarters, ...statQuarters]) {
+    pqSet.add(`${r.player_id}-${r.quarter}`);
+  }
+
+  if (pqSet.size === 0) return [];
+
+  // 2. Get player names
+  const playerNames = new Map<number, string>();
+  const nameRows = db.prepare(
+    `SELECT sp.player_id, p.name
      FROM session_players sp
      JOIN players p ON p.id = sp.player_id
-     JOIN shots sh ON sh.session_id = sp.session_id AND sh.player_id = sp.player_id
-     WHERE sp.session_id = ? AND sp.is_opposition = 0
-     GROUP BY sp.player_id, sh.quarter
-     ORDER BY p.name ASC, sh.quarter ASC`
-  ).all(sessionId) as { player_id: number; name: string; quarter: number; made: number; attempted: number }[];
+     WHERE sp.session_id = ? AND sp.is_opposition = 0`
+  ).all(sessionId) as { player_id: number; name: string }[];
+  for (const r of nameRows) playerNames.set(r.player_id, r.name);
 
+  // 3. Get shot data
+  const shotRows = db.prepare(
+    `SELECT sh.player_id, sh.quarter,
+       COALESCE(SUM(CASE WHEN sh.scored = 1 THEN 1 ELSE 0 END), 0) AS made,
+       COUNT(sh.id) AS attempted
+     FROM shots sh
+     JOIN session_players sp ON sp.session_id = sh.session_id AND sp.player_id = sh.player_id
+     WHERE sh.session_id = ? AND sp.is_opposition = 0
+     GROUP BY sh.player_id, sh.quarter`
+  ).all(sessionId) as { player_id: number; quarter: number; made: number; attempted: number }[];
+  const shotMap = new Map<string, { made: number; attempted: number }>();
+  for (const r of shotRows) shotMap.set(`${r.player_id}-${r.quarter}`, { made: r.made, attempted: r.attempted });
+
+  // 4. Get stat data
   const statRows = db.prepare(
     `SELECT se.player_id, se.quarter, se.stat_type_id, COUNT(*) AS cnt
      FROM stat_events se
@@ -734,7 +780,6 @@ export function getPlayerQuarterBreakdown(db: Database.Database, sessionId: numb
      WHERE se.session_id = ? AND sp.is_opposition = 0
      GROUP BY se.player_id, se.quarter, se.stat_type_id`
   ).all(sessionId) as { player_id: number; quarter: number; stat_type_id: number; cnt: number }[];
-
   const statMap = new Map<string, Record<number, number>>();
   for (const row of statRows) {
     const key = `${row.player_id}-${row.quarter}`;
@@ -743,10 +788,25 @@ export function getPlayerQuarterBreakdown(db: Database.Database, sessionId: numb
     statMap.set(key, entry);
   }
 
-  return shotRows.map(row => ({
-    ...row,
-    stat_counts: statMap.get(`${row.player_id}-${row.quarter}`) ?? {},
-  }));
+  // 5. Build result for every player-quarter combo
+  const results: PlayerQuarterStats[] = [];
+  for (const pqKey of pqSet) {
+    const [pidStr, qStr] = pqKey.split('-');
+    const player_id = parseInt(pidStr, 10);
+    const quarter = parseInt(qStr, 10);
+    const shots = shotMap.get(pqKey) ?? { made: 0, attempted: 0 };
+    results.push({
+      player_id,
+      name: playerNames.get(player_id) ?? '',
+      quarter,
+      made: shots.made,
+      attempted: shots.attempted,
+      stat_counts: statMap.get(pqKey) ?? {},
+    });
+  }
+
+  results.sort((a, b) => a.name.localeCompare(b.name) || a.quarter - b.quarter);
+  return results;
 }
 
 export function setPlayerPosition(db: Database.Database, sessionId: number, playerId: number, position: string | null): void {
@@ -847,11 +907,12 @@ export function getPlayerCareerStats(db: Database.Database, playerId: number): P
   const agg = db
     .prepare(
       `SELECT
-         (SELECT COUNT(*) FROM session_players WHERE player_id = ?) AS sessions_played,
+         (SELECT COUNT(*) FROM session_players sp2 JOIN sessions s2 ON s2.id = sp2.session_id WHERE sp2.player_id = ? AND s2.deleted_at IS NULL) AS sessions_played,
          COALESCE(SUM(CASE WHEN sh.scored = 1 THEN 1 ELSE 0 END), 0) AS total_made,
          COALESCE(COUNT(sh.id), 0) AS total_attempted
        FROM shots sh
-       WHERE sh.player_id = ?`
+       JOIN sessions s ON s.id = sh.session_id
+       WHERE sh.player_id = ? AND s.deleted_at IS NULL`
     )
     .get(playerId, playerId) as {
       sessions_played: number;
@@ -861,10 +922,11 @@ export function getPlayerCareerStats(db: Database.Database, playerId: number): P
 
   const careerStatRows = db
     .prepare(
-      `SELECT stat_type_id, COUNT(*) AS cnt
-       FROM stat_events
-       WHERE player_id = ?
-       GROUP BY stat_type_id`
+      `SELECT se.stat_type_id, COUNT(*) AS cnt
+       FROM stat_events se
+       JOIN sessions s ON s.id = se.session_id
+       WHERE se.player_id = ? AND s.deleted_at IS NULL
+       GROUP BY se.stat_type_id`
     )
     .all(playerId) as { stat_type_id: number; cnt: number }[];
 
@@ -885,7 +947,7 @@ export function getPlayerCareerStats(db: Database.Database, playerId: number): P
        JOIN sessions s ON s.id = sp.session_id
        JOIN teams t ON t.id = s.team_id
        LEFT JOIN shots sh ON sh.session_id = s.id AND sh.player_id = ?
-       WHERE sp.player_id = ?
+       WHERE sp.player_id = ? AND s.deleted_at IS NULL
        GROUP BY s.id
        ORDER BY s.started_at DESC, s.id DESC`
     )
@@ -901,10 +963,11 @@ export function getPlayerCareerStats(db: Database.Database, playerId: number): P
 
   const sessionStatRows = db
     .prepare(
-      `SELECT session_id, stat_type_id, COUNT(*) AS cnt
-       FROM stat_events
-       WHERE player_id = ?
-       GROUP BY session_id, stat_type_id`
+      `SELECT se.session_id, se.stat_type_id, COUNT(*) AS cnt
+       FROM stat_events se
+       JOIN sessions s ON s.id = se.session_id
+       WHERE se.player_id = ? AND s.deleted_at IS NULL
+       GROUP BY se.session_id, se.stat_type_id`
     )
     .all(playerId) as { session_id: number; stat_type_id: number; cnt: number }[];
 
@@ -963,7 +1026,7 @@ export function getAllLeaderboards(
        FROM shots sh
        JOIN players p ON p.id = sh.player_id
        JOIN sessions s ON s.id = sh.session_id
-       WHERE sh.scored = 1${teamId ? ' AND s.team_id = @teamId' : ''}
+       WHERE sh.scored = 1 AND s.deleted_at IS NULL${teamId ? ' AND s.team_id = @teamId' : ''}
        GROUP BY sh.session_id, p.id
        ORDER BY value DESC
        LIMIT 10`
@@ -983,7 +1046,7 @@ export function getAllLeaderboards(
        FROM shots sh
        JOIN players p ON p.id = sh.player_id
        JOIN sessions s ON s.id = sh.session_id
-       ${teamId ? 'WHERE s.team_id = @teamId' : ''}
+       WHERE s.deleted_at IS NULL${teamId ? ' AND s.team_id = @teamId' : ''}
        GROUP BY sh.session_id, p.id
        HAVING COUNT(*) >= 5
        ORDER BY value DESC
@@ -1004,7 +1067,7 @@ export function getAllLeaderboards(
        FROM shots sh
        JOIN players p ON p.id = sh.player_id
        JOIN sessions s ON s.id = sh.session_id
-       ${teamId ? 'WHERE s.team_id = @teamId' : ''}
+       WHERE s.deleted_at IS NULL${teamId ? ' AND s.team_id = @teamId' : ''}
        GROUP BY sh.session_id, p.id
        ORDER BY value DESC
        LIMIT 10`
@@ -1020,7 +1083,7 @@ export function getAllLeaderboards(
        FROM shots sh
        JOIN players p ON p.id = sh.player_id
        JOIN sessions s ON s.id = sh.session_id
-       ${teamId ? 'WHERE s.team_id = @teamId AND sh.scored = 1' : 'WHERE sh.scored = 1'}
+       WHERE sh.scored = 1 AND s.deleted_at IS NULL${teamId ? ' AND s.team_id = @teamId' : ''}
        GROUP BY p.id
        ORDER BY value DESC
        LIMIT 10`
@@ -1039,7 +1102,7 @@ export function getAllLeaderboards(
        FROM shots sh
        JOIN players p ON p.id = sh.player_id
        JOIN sessions s ON s.id = sh.session_id
-       ${teamId ? 'WHERE s.team_id = @teamId' : ''}
+       WHERE s.deleted_at IS NULL${teamId ? ' AND s.team_id = @teamId' : ''}
        GROUP BY p.id
        HAVING COUNT(*) >= 10
        ORDER BY value DESC
@@ -1062,7 +1125,7 @@ export function getAllLeaderboards(
          FROM stat_events se
          JOIN players p ON p.id = se.player_id
          JOIN sessions s ON s.id = se.session_id
-         ${teamId ? 'WHERE s.team_id = @teamId AND se.stat_type_id = @statTypeId' : 'WHERE se.stat_type_id = @statTypeId'}
+         WHERE se.stat_type_id = @statTypeId AND s.deleted_at IS NULL${teamId ? ' AND s.team_id = @teamId' : ''}
          GROUP BY se.session_id, p.id
          ORDER BY value DESC
          LIMIT 10`
@@ -1086,7 +1149,7 @@ export function getAllLeaderboards(
          FROM stat_events se
          JOIN players p ON p.id = se.player_id
          JOIN sessions s ON s.id = se.session_id
-         ${teamId ? 'WHERE s.team_id = @teamId AND se.stat_type_id = @statTypeId' : 'WHERE se.stat_type_id = @statTypeId'}
+         WHERE se.stat_type_id = @statTypeId AND s.deleted_at IS NULL${teamId ? ' AND s.team_id = @teamId' : ''}
          GROUP BY p.id
          ORDER BY value DESC
          LIMIT 10`

@@ -41,7 +41,7 @@ export default function RecoveryPanel({ sessions, players, teams }: Props) {
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-dim)]">Teams</p>
           {teams.map(team => (
-            <div key={team.id} className="flex items-center justify-between border border-[var(--border)] bg-[var(--surface)] rounded px-4 py-3">
+            <div key={team.id} className="flex items-center justify-between border border-[var(--border)] bg-white/25 backdrop-blur-sm rounded px-4 py-3">
               <span className="text-[var(--text-muted)]">{team.name}</span>
               <button
                 onClick={() => handleRestore('team', team.id)}
@@ -59,7 +59,7 @@ export default function RecoveryPanel({ sessions, players, teams }: Props) {
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-dim)]">Players</p>
           {players.map(player => (
-            <div key={player.id} className="flex items-center justify-between border border-[var(--border)] bg-[var(--surface)] rounded px-4 py-3">
+            <div key={player.id} className="flex items-center justify-between border border-[var(--border)] bg-white/25 backdrop-blur-sm rounded px-4 py-3">
               <div>
                 <span className="text-[var(--text-muted)]">{player.name}</span>
                 {player.team_name && <span className="text-xs text-[var(--text-dim)] ml-2">{player.team_name}</span>}
@@ -80,7 +80,7 @@ export default function RecoveryPanel({ sessions, players, teams }: Props) {
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-dim)]">Matches</p>
           {sessions.map(session => (
-            <div key={session.id} className="flex items-center justify-between border border-[var(--border)] bg-[var(--surface)] rounded px-4 py-3">
+            <div key={session.id} className="flex items-center justify-between border border-[var(--border)] bg-white/25 backdrop-blur-sm rounded px-4 py-3">
               <div>
                 <span className="text-[var(--text-muted)]">{session.name ?? 'Unnamed match'}</span>
                 <span className="text-xs text-[var(--text-dim)] ml-2">

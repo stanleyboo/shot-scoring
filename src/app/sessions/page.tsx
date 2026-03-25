@@ -23,7 +23,7 @@ export default async function SessionsPage() {
           {sessions.length > 0 && <ExportAllButton />}
           <Link
             href="/sessions/new"
-            className="bg-[var(--gold)] rounded px-4 py-2 text-sm font-bold text-black transition hover:bg-[var(--gold-hover)]"
+            className="bg-[var(--gold)] rounded px-4 py-2 text-sm font-bold text-[var(--bg)] transition hover:bg-[var(--gold-hover)]"
           >
             + New Match
           </Link>
@@ -31,7 +31,7 @@ export default async function SessionsPage() {
       </div>
 
       {sessions.length === 0 ? (
-        <div className="border border-dashed border-[var(--gold)]/30 bg-[var(--surface)] rounded p-12 text-center">
+        <div className="border border-dashed border-[var(--gold)]/30 bg-white/25 backdrop-blur-sm rounded p-12 text-center">
           <p className="mb-3 text-[var(--text-muted)]">No matches yet.</p>
           <Link href="/sessions/new" className="text-sm text-[var(--gold)] hover:text-[var(--gold-hover)]">
             Start your first match →

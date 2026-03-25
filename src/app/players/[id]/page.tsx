@@ -36,7 +36,7 @@ export default async function PlayerProfilePage({ params }: Props) {
           { label: player.name },
         ]} />
         <div>
-          <h1 className="text-2xl font-bold text-white font-[family-name:var(--font-display)] uppercase tracking-wide">{player.name}</h1>
+          <h1 className="text-2xl font-bold text-[var(--text)] font-[family-name:var(--font-display)] uppercase tracking-wide">{player.name}</h1>
           {stats.team_name && (
             <p className="text-sm text-[var(--gold)]">{stats.team_name}</p>
           )}
@@ -44,15 +44,15 @@ export default async function PlayerProfilePage({ params }: Props) {
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <div className="rounded border border-[var(--border-gold)] bg-black/60 p-4 text-center gold-accent">
-          <p className="text-3xl font-black text-white font-[family-name:var(--font-display)]">{stats.sessions_played}</p>
+        <div className="rounded border border-[var(--border-gold)] bg-white/25 backdrop-blur-sm p-4 text-center gold-accent">
+          <p className="text-3xl font-black text-[var(--text)] font-[family-name:var(--font-display)]">{stats.sessions_played}</p>
           <p className="mt-1 text-xs text-[var(--text-dim)]">Matches</p>
         </div>
-        <div className="rounded border border-[var(--border-gold)] bg-black/60 p-4 text-center gold-accent">
-          <p className="text-3xl font-black text-white font-[family-name:var(--font-display)]">{stats.total_attempted}</p>
+        <div className="rounded border border-[var(--border-gold)] bg-white/25 backdrop-blur-sm p-4 text-center gold-accent">
+          <p className="text-3xl font-black text-[var(--text)] font-[family-name:var(--font-display)]">{stats.total_attempted}</p>
           <p className="mt-1 text-xs text-[var(--text-dim)]">Total Shots</p>
         </div>
-        <div className="rounded border border-[var(--border-gold)] bg-black/60 p-4 text-center gold-accent">
+        <div className="rounded border border-[var(--border-gold)] bg-white/25 backdrop-blur-sm p-4 text-center gold-accent">
           <p
             className={`text-3xl font-black font-[family-name:var(--font-display)] ${
               stats.total_attempted === 0 ? 'text-[var(--text-dim)]'
@@ -70,7 +70,7 @@ export default async function PlayerProfilePage({ params }: Props) {
       {activeStatTypes.length > 0 && (
         <div className="grid grid-cols-3 gap-3">
           {activeStatTypes.map(st => (
-            <div key={st.id} className="rounded border border-[var(--border-gold)] bg-black/60 p-4 text-center gold-accent">
+            <div key={st.id} className="rounded border border-[var(--border-gold)] bg-white/25 backdrop-blur-sm p-4 text-center gold-accent">
               <p className="text-3xl font-black text-[var(--gold)] font-[family-name:var(--font-display)]">
                 {stats.career_stat_counts[st.id] ?? 0}
               </p>
@@ -88,7 +88,7 @@ export default async function PlayerProfilePage({ params }: Props) {
       {stats.sessions.length > 0 && (
         <div className="overflow-x-auto rounded border border-[var(--border-gold)]">
           <table className="w-full">
-            <thead className="bg-black">
+            <thead className="bg-white/25 backdrop-blur-sm">
               <tr>
                 <th className="px-4 py-3 text-left text-sm font-medium text-[var(--text-muted)]">
                   Match
@@ -113,12 +113,12 @@ export default async function PlayerProfilePage({ params }: Props) {
               {stats.sessions.map((s) => (
                 <tr
                   key={s.session_id}
-                  className="bg-black/50 transition-colors hover:bg-black/70"
+                  className="bg-white/20 transition-colors hover:bg-white/25 backdrop-blur-sm"
                 >
                   <td className="px-4 py-3">
                     <Link
                       href={`/sessions/${s.session_id}/summary`}
-                      className="text-white transition-colors hover:text-[var(--gold)]"
+                      className="text-[var(--text)] transition-colors hover:text-[var(--gold)]"
                     >
                       {s.session_name ?? 'Training Session'}
                     </Link>
@@ -133,7 +133,7 @@ export default async function PlayerProfilePage({ params }: Props) {
                   </td>
                   <td className="px-4 py-3 text-right text-[var(--gold)]">{s.made}</td>
                   <td className="px-4 py-3 text-right text-[var(--text-muted)]">{s.attempted}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-white">
+                  <td className="px-4 py-3 text-right font-semibold text-[var(--text)]">
                     {pct(s.made, s.attempted)}
                   </td>
                   {activeStatTypes.map(st => (
@@ -149,7 +149,7 @@ export default async function PlayerProfilePage({ params }: Props) {
       )}
 
       {stats.sessions.length === 0 && (
-        <div className="border border-dashed border-[var(--gold)]/30 bg-[var(--surface)] rounded p-8 text-center">
+        <div className="border border-dashed border-[var(--gold)]/30 bg-white/25 backdrop-blur-sm rounded p-8 text-center">
           <p className="text-[var(--text-muted)]">No match history yet.</p>
         </div>
       )}

@@ -67,7 +67,7 @@ export default function NewSessionForm({
           <select
             value={teamId}
             onChange={event => handleTeamChange(event.target.value)}
-            className="w-full bg-[var(--surface)] border border-[var(--border)] rounded px-4 py-3 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
+            className="w-full bg-white/25 backdrop-blur-sm border border-[var(--border)] rounded px-4 py-3 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
             disabled={isPending}
           >
             {teams.map(team => (
@@ -85,7 +85,7 @@ export default function NewSessionForm({
             value={name}
             onChange={event => setName(event.target.value)}
             placeholder="e.g. Wednesday v Halifax"
-            className="w-full bg-[var(--surface)] border border-[var(--border)] rounded px-4 py-3 text-[var(--text)] placeholder:text-[var(--text-dim)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
+            className="w-full bg-white/25 backdrop-blur-sm border border-[var(--border)] rounded px-4 py-3 text-[var(--text)] placeholder:text-[var(--text-dim)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
             disabled={isPending}
           />
         </div>
@@ -96,7 +96,7 @@ export default function NewSessionForm({
           Players ({selected.size} selected)
         </p>
         {teamPlayers.length === 0 ? (
-          <div className="border-2 border-[var(--border)] bg-black p-6 text-center">
+          <div className="border-2 border-[var(--border)] bg-white/25 backdrop-blur-sm p-6 text-center">
             <p className="mb-2 text-[var(--text-muted)]">No players in this team yet.</p>
             <a href="/players" className="text-sm text-[var(--gold)] hover:text-[var(--gold-hover)]">
               Add players first →
@@ -111,8 +111,8 @@ export default function NewSessionForm({
                 onClick={() => togglePlayer(player.id)}
                 className={`flex items-center gap-3 border rounded px-4 py-3.5 text-left transition ${
                   selected.has(player.id)
-                    ? 'border-[var(--gold)] bg-[var(--gold)]/10 text-white'
-                    : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-[var(--gold)]'
+                    ? 'border-[var(--gold)] bg-[var(--gold)]/10 text-[var(--text)]'
+                    : 'border-[var(--border)] bg-white/25 backdrop-blur-sm text-[var(--text-muted)] hover:border-[var(--gold)]'
                 }`}
               >
                 <div
@@ -140,7 +140,7 @@ export default function NewSessionForm({
       <button
         type="submit"
         disabled={isPending || selected.size === 0 || teamPlayers.length === 0}
-        className="w-full bg-[var(--gold)] text-black font-bold rounded py-4 text-xl hover:bg-[var(--gold-hover)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 transition-all font-[family-name:var(--font-display)] uppercase tracking-wide"
+        className="w-full bg-[var(--gold)] text-[var(--bg)] font-bold rounded py-4 text-xl hover:bg-[var(--gold-hover)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 transition-all font-[family-name:var(--font-display)] uppercase tracking-wide"
       >
         {isPending ? 'Starting...' : 'Start Match'}
       </button>

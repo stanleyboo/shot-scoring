@@ -23,7 +23,7 @@ export default async function NewSessionPage() {
           ←
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-white font-[family-name:var(--font-display)] uppercase">New Match</h1>
+          <h1 className="text-2xl font-bold text-[var(--text)] font-[family-name:var(--font-display)] uppercase">New Match</h1>
           <p className="text-sm text-[var(--text-muted)]">Choose a team and line-up before scoring starts.</p>
         </div>
       </div>

@@ -35,14 +35,14 @@ export default function AddPlayerForm({ teams }: { teams: Team[] }) {
           value={name}
           onChange={event => setName(event.target.value)}
           placeholder="Player name..."
-          className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded px-4 py-3 text-[var(--text)] placeholder:text-[var(--text-dim)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
+          className="flex-1 bg-white/25 backdrop-blur-sm border border-[var(--border)] rounded px-4 py-3 text-[var(--text)] placeholder:text-[var(--text-dim)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
           disabled={isPending}
           maxLength={50}
         />
         <select
           value={teamId}
           onChange={event => setTeamId(event.target.value)}
-          className="bg-[var(--surface)] border border-[var(--border)] rounded px-4 py-3 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
+          className="bg-white/25 backdrop-blur-sm border border-[var(--border)] rounded px-4 py-3 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
           disabled={isPending}
         >
           {teams.map(team => (
@@ -54,7 +54,7 @@ export default function AddPlayerForm({ teams }: { teams: Team[] }) {
         <button
           type="submit"
           disabled={isPending || !name.trim() || !teamId}
-          className="bg-[var(--gold)] text-black font-bold rounded px-5 py-3 hover:bg-[var(--gold-hover)] active:scale-[0.98] disabled:opacity-50 transition-all uppercase tracking-wide"
+          className="bg-[var(--gold)] text-[var(--bg)] font-black rounded px-5 py-3 hover:bg-[var(--gold-hover)] active:scale-[0.98] disabled:opacity-50 transition-all uppercase tracking-wide text-sm"
         >
           {isPending ? '...' : 'Add Player'}
         </button>

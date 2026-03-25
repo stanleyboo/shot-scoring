@@ -1,18 +1,18 @@
 import type { Metadata, Viewport } from 'next';
-import { Bebas_Neue, DM_Mono } from 'next/font/google';
+import { Oswald, Inter } from 'next/font/google';
 import './globals.css';
 import Nav from '@/components/Nav';
 import ToastProvider from '@/components/ToastProvider';
+import KangarooBg from '@/components/KangarooBg';
 
-const bebasNeue = Bebas_Neue({
+const oswald = Oswald({
   subsets: ['latin'],
-  weight: '400',
+  weight: ['400', '500', '600', '700'],
   variable: '--font-display',
 });
 
-const dmMono = DM_Mono({
+const inter = Inter({
   subsets: ['latin'],
-  weight: ['300', '400', '500'],
   variable: '--font-body',
 });
 
@@ -41,10 +41,14 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${dmMono.variable} ${bebasNeue.variable} font-[family-name:var(--font-body)] min-h-screen antialiased`}>
+      <head>
+        <script defer src="https://cloud.umami.is/script.js" data-website-id="c0a9cb0a-3178-4154-8b33-4feda376c3aa" />
+      </head>
+      <body className={`${inter.variable} ${oswald.variable} font-[family-name:var(--font-body)] min-h-screen antialiased`}>
+        <KangarooBg />
         <ToastProvider>
           <Nav />
-          <main className="mx-auto max-w-7xl px-4 py-8">
+          <main className="relative z-10 mx-auto max-w-7xl px-4 py-6 sm:py-8 sm:px-6 lg:px-8">
             {children}
           </main>
         </ToastProvider>

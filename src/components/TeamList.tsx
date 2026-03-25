@@ -46,7 +46,7 @@ export default function TeamList({ teams }: { teams: TeamSummary[] }) {
         return (
           <div
             key={team.id}
-            className="border border-[var(--border)] bg-[var(--surface)] rounded px-4 py-4 gold-accent"
+            className="border border-[var(--border)] bg-white/25 backdrop-blur-sm rounded px-4 py-4 gold-accent"
           >
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
@@ -56,13 +56,13 @@ export default function TeamList({ teams }: { teams: TeamSummary[] }) {
                       autoFocus
                       value={name}
                       onChange={event => setName(event.target.value)}
-                      className="min-w-[220px] flex-1 bg-[var(--surface)] border border-[var(--border)] rounded px-3 py-2 text-[var(--text)] placeholder:text-[var(--text-dim)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
+                      className="min-w-[220px] flex-1 bg-white/25 backdrop-blur-sm border border-[var(--border)] rounded px-3 py-2 text-[var(--text)] placeholder:text-[var(--text-dim)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
                       disabled={isPending}
                     />
                     <button
                       onClick={() => handleRename(team.id)}
                       disabled={isPending || !name.trim()}
-                      className="bg-[var(--gold)] text-black font-bold rounded px-3 py-2 text-sm hover:bg-[var(--gold-hover)] active:scale-[0.98] disabled:opacity-50 transition-all"
+                      className="bg-[var(--gold)] text-[var(--bg)] font-bold rounded px-3 py-2 text-sm hover:bg-[var(--gold-hover)] active:scale-[0.98] disabled:opacity-50 transition-all"
                     >
                       Save
                     </button>
@@ -85,7 +85,7 @@ export default function TeamList({ teams }: { teams: TeamSummary[] }) {
               </div>
 
               <div className="text-right">
-                <p className="text-sm font-semibold text-white">
+                <p className="text-sm font-semibold text-[var(--text)]">
                   {team.wins}-{team.draws}-{team.losses}
                 </p>
                 <p className="text-xs text-[var(--text-muted)]">
@@ -97,7 +97,7 @@ export default function TeamList({ teams }: { teams: TeamSummary[] }) {
             <div className="mt-4 flex items-center gap-3">
               <Link
                 href={`/teams/${team.id}`}
-                className="bg-[var(--gold)] rounded border border-[var(--gold)] px-3 py-2 text-sm font-black uppercase tracking-wide text-black hover:bg-[var(--gold-hover)]"
+                className="bg-[var(--gold)] rounded border border-[var(--gold)] px-3 py-2 text-sm font-black uppercase tracking-wide text-[var(--bg)] hover:bg-[var(--gold-hover)]"
               >
                 Open Team
               </Link>

@@ -49,7 +49,7 @@ export default function ToastProvider({ children }: { children: React.ReactNode 
             {toasts.map(t => (
               <div
                 key={t.id}
-                className={`rounded border ${borderColor[t.variant]} bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text)] shadow-lg animate-[fadeIn_0.2s_ease-out] gold-accent`}
+                className={`rounded border ${borderColor[t.variant]} bg-white/25 backdrop-blur-sm px-4 py-3 text-sm text-[var(--text)] shadow-lg animate-[fadeIn_0.2s_ease-out] gold-accent`}
               >
                 {t.message}
               </div>

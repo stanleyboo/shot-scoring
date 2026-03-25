@@ -38,7 +38,7 @@ export default function SessionListPage({ sessions, teams, isAdmin: admin }: Pro
           <select
             value={teamFilter}
             onChange={e => setTeamFilter(e.target.value)}
-            className="bg-[var(--surface)] border border-[var(--border)] rounded px-4 py-3 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
+            className="bg-white/25 backdrop-blur-sm border border-[var(--border)] rounded px-4 py-3 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
           >
             <option value="">All teams</option>
             {teams.map(t => (
@@ -56,7 +56,7 @@ export default function SessionListPage({ sessions, teams, isAdmin: admin }: Pro
           return (
             <section key={team.id} className="space-y-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-white font-[family-name:var(--font-display)] uppercase">{team.name}</h2>
+                <h2 className="text-xl font-bold text-[var(--text)] font-[family-name:var(--font-display)] uppercase">{team.name}</h2>
                 <Link href={`/teams/${team.id}`} className="text-sm text-[var(--gold)] hover:text-[var(--gold-hover)]">
                   Team dashboard →
                 </Link>
@@ -71,16 +71,16 @@ export default function SessionListPage({ sessions, teams, isAdmin: admin }: Pro
                   return (
                     <li
                       key={session.id}
-                      className="flex items-center gap-1 border border-[var(--border)] bg-[var(--surface)] rounded transition hover:border-[var(--gold)] gold-glow"
+                      className="flex items-center gap-1 border border-[var(--border)] bg-white/25 backdrop-blur-sm rounded transition hover:border-[var(--gold)] gold-glow"
                     >
                       <Link href={href} className="flex flex-1 items-center justify-between px-4 py-4">
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-medium text-white">
+                            <span className="font-medium text-[var(--text)]">
                               {session.name ?? 'Training Session'}
                             </span>
                             {!session.ended_at && (
-                              <span className="bg-[var(--gold)] px-2 py-0.5 text-xs font-black uppercase tracking-wide text-black">
+                              <span className="bg-[var(--gold)] px-2 py-0.5 text-xs font-black uppercase tracking-wide text-[var(--bg)]">
                                 LIVE
                               </span>
                             )}
@@ -114,7 +114,7 @@ export default function SessionListPage({ sessions, teams, isAdmin: admin }: Pro
       </div>
 
       {filtered.length === 0 && search && (
-        <div className="border border-dashed border-[var(--gold)]/30 bg-[var(--surface)] rounded p-8 text-center">
+        <div className="border border-dashed border-[var(--gold)]/30 bg-white/25 backdrop-blur-sm rounded p-8 text-center">
           <p className="text-[var(--text-muted)]">No matches found.</p>
         </div>
       )}

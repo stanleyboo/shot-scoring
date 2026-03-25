@@ -1,23 +1,31 @@
 @import "tailwindcss";
 
 :root {
-  --gold: #E8B800;
-  --gold-secondary: #C9960C;
-  --gold-hover: #F5CC33;
-  --surface: #1A1A1A;
-  --bg: #0A0A0A;
-  --text: #FAFAFA;
-  --text-muted: #A0A0A0;
-  --text-dim: #666666;
-  --border: #2A2A2A;
-  --border-gold: rgba(232, 184, 0, 0.2);
-  --red: #DC2626;
-  --red-hover: #EF4444;
-  --green: #16A34A;
+  /* Page background — solid yellow */
+  --bg: #EDE8A0;
 
-  --page-bg:
-    linear-gradient(90deg, rgba(232, 184, 0, 0.06) 0, rgba(232, 184, 0, 0.06) 24px, transparent 24px, transparent 120px),
-    linear-gradient(180deg, #0F0F0F 0%, #0A0A0A 100%);
+  /* Accent colour — dark, used for highlights/buttons on yellow bg */
+  --gold: #1A1A1A;
+  --gold-secondary: #2A2A2A;
+  --gold-hover: #333333;
+
+  /* Glassy surfaces */
+  --surface: rgba(255, 255, 255, 0.25);
+  --surface-solid: rgba(255, 255, 255, 0.35);
+
+  /* Text — dark on yellow */
+  --text: #1A1A1A;
+  --text-muted: #3A3A2A;
+  --text-dim: #6A6A50;
+
+  /* Borders */
+  --border: rgba(0, 0, 0, 0.1);
+  --border-gold: rgba(0, 0, 0, 0.08);
+
+  /* Semantic */
+  --red: #B91C1C;
+  --red-hover: #DC2626;
+  --green: #15803D;
 }
 
 html {
@@ -26,10 +34,26 @@ html {
 
 body {
   min-height: 100vh;
-  background: var(--page-bg);
+  background: var(--bg);
   color: var(--text);
   -webkit-tap-highlight-color: transparent;
 }
+
+/* Scattered kangaroos background */
+.kangaroo-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  color: rgba(0, 0, 0, 0.045);
+}
+
+.kangaroo-bg .k {
+  position: absolute;
+  display: block;
+}
+
 
 button {
   touch-action: manipulation;
@@ -44,12 +68,18 @@ button {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Gold glow hover effect for cards */
 .gold-glow:hover {
-  box-shadow: 0 0 20px rgba(232, 184, 0, 0.15);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
 }
 
-/* Gold left border accent */
 .gold-accent {
   border-left: 3px solid var(--gold);
+}
+
+/* Glassy card effect */
+.glass {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
 }

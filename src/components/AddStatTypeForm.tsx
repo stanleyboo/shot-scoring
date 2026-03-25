@@ -33,14 +33,14 @@ export default function AddStatTypeForm() {
           value={name}
           onChange={e => setName(e.target.value)}
           placeholder="Stat type name..."
-          className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded px-4 py-3 text-[var(--text)] placeholder:text-[var(--text-dim)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
+          className="flex-1 bg-white/25 backdrop-blur-sm border border-[var(--border)] rounded px-4 py-3 text-[var(--text)] placeholder:text-[var(--text-dim)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/30"
           disabled={isPending}
           maxLength={50}
         />
         <button
           type="submit"
           disabled={isPending || !name.trim()}
-          className="bg-[var(--gold)] text-black font-bold rounded px-5 py-3 hover:bg-[var(--gold-hover)] active:scale-[0.98] disabled:opacity-50 transition-all"
+          className="bg-[var(--gold)] text-[var(--bg)] font-bold rounded px-5 py-3 hover:bg-[var(--gold-hover)] active:scale-[0.98] disabled:opacity-50 transition-all"
         >
           {isPending ? '...' : 'Add'}
         </button>

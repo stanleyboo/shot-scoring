@@ -16,10 +16,10 @@ function LeaderboardCard({ board, uniqueOnly }: { board: Leaderboard; uniqueOnly
   }
 
   return (
-    <div className="overflow-hidden border border-[var(--border)] bg-[var(--surface)] rounded">
+    <div className="overflow-hidden border border-[var(--border)] bg-white/25 backdrop-blur-sm rounded">
       <div className="border-b border-[var(--border)] bg-[var(--gold)] px-4 py-3">
-        <h3 className="text-sm font-black uppercase tracking-wide text-black font-[family-name:var(--font-display)]">{board.title}</h3>
-        <p className="text-[11px] text-black/70">{board.subtitle}</p>
+        <h3 className="text-sm font-black uppercase tracking-wide text-[var(--bg)] font-[family-name:var(--font-display)]">{board.title}</h3>
+        <p className="text-[11px] text-[var(--bg)]/70">{board.subtitle}</p>
       </div>
       <ul className="divide-y divide-[var(--border)]">
         {entries.map((entry, index) => (
@@ -33,14 +33,14 @@ function LeaderboardCard({ board, uniqueOnly }: { board: Leaderboard; uniqueOnly
               <div className="min-w-0">
                 <Link
                   href={`/players/${entry.player_id}`}
-                  className="block truncate text-sm text-white transition-colors hover:text-[var(--gold)]"
+                  className="block truncate text-sm text-[var(--text)] transition-colors hover:text-[var(--gold)]"
                 >
                   {entry.name}
                 </Link>
                 {entry.label && <p className="truncate text-[11px] text-[var(--text-dim)]">{entry.label}</p>}
               </div>
             </div>
-            <span className="text-sm font-bold text-white tabular-nums">
+            <span className="text-sm font-bold text-[var(--text)] tabular-nums">
               {board.format === 'percent' ? `${entry.value}%` : entry.value}
             </span>
           </li>
@@ -73,8 +73,8 @@ export default function LeaderboardSection({ sections }: { sections: Section[] }
           onClick={() => setUniqueOnly(!uniqueOnly)}
           className={`border px-4 py-2 rounded text-xs font-black uppercase tracking-wide transition ${
             uniqueOnly
-              ? 'border-[var(--gold)] bg-[var(--gold)] text-black'
-              : 'border-[var(--border)] bg-black text-[var(--text-muted)] hover:border-[var(--gold)]'
+              ? 'border-[var(--gold)] bg-[var(--gold)] text-[var(--bg)]'
+              : 'border-[var(--border)] bg-white/25 backdrop-blur-sm text-[var(--text-muted)] hover:border-[var(--gold)]'
           }`}
         >
           {uniqueOnly ? 'Best per player' : 'All entries'}
@@ -83,7 +83,7 @@ export default function LeaderboardSection({ sections }: { sections: Section[] }
 
       {visibleSections.map(section => (
         <section key={section.title} className="space-y-4">
-          <h2 className="text-xl font-bold text-white font-[family-name:var(--font-display)] uppercase">{section.title}</h2>
+          <h2 className="text-xl font-bold text-[var(--text)] font-[family-name:var(--font-display)] uppercase">{section.title}</h2>
 
           {section.match.length > 0 && (
             <div className="space-y-3">
