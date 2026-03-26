@@ -115,28 +115,30 @@ export default function PlayerScoreCard({
       )}
 
       {/* Shot buttons */}
-      <div className="flex gap-1.5 lg:gap-1">
-        <button
-          onClick={() => onShot(player_id, true)}
-          disabled={isPending}
-          className="flex-1 rounded bg-[var(--green)] py-1.5 text-sm font-black text-[var(--text)] hover:bg-green-500 active:scale-95 disabled:opacity-50 transition-all min-h-[40px] sm:text-base lg:py-1 lg:text-[11px] lg:min-h-0"
-        >
-          SCORED
-        </button>
+      <div className="grid grid-cols-2 gap-1 lg:gap-1">
+        <div className="flex items-center overflow-hidden rounded border border-[var(--green)]/30 bg-[var(--green)]/10 min-w-0">
+          <button
+            onClick={() => onShot(player_id, true)}
+            disabled={isPending}
+            className="flex min-h-[40px] min-w-0 flex-1 items-center justify-center px-2 py-1.5 text-sm font-black text-[var(--green)] transition-all hover:bg-[var(--green)]/20 active:scale-[0.97] active:bg-[var(--green)]/30 disabled:opacity-50 lg:min-h-0 lg:px-1.5 lg:py-0.5 lg:text-xs"
+          >
+            SCORED
+          </button>
+          <button
+            onClick={() => onUndo(player_id)}
+            disabled={isPending || attempted === 0}
+            title="Undo last shot"
+            className="min-h-[40px] flex-shrink-0 border-l border-[var(--green)]/20 px-2 py-1.5 text-sm text-[var(--green)]/50 transition-all hover:bg-[var(--green)]/20 hover:text-[var(--green)] active:bg-[var(--green)]/30 disabled:cursor-not-allowed disabled:opacity-30 lg:min-h-0 lg:px-1.5 lg:py-0.5 lg:text-xs"
+          >
+            ↩
+          </button>
+        </div>
         <button
           onClick={() => onShot(player_id, false)}
           disabled={isPending}
-          className="flex-1 rounded bg-[var(--red)] py-1.5 text-sm font-black text-[var(--text)] hover:bg-[var(--red-hover)] active:scale-95 disabled:opacity-50 transition-all min-h-[40px] sm:text-base lg:py-1 lg:text-[11px] lg:min-h-0"
+          className="flex min-h-[40px] items-center justify-center rounded border border-[var(--red)]/30 bg-[var(--red)]/10 px-2 py-1.5 text-sm font-black text-[var(--red)] transition-all hover:bg-[var(--red)]/20 active:scale-[0.97] active:bg-[var(--red)]/30 disabled:opacity-50 lg:min-h-0 lg:px-1.5 lg:py-0.5 lg:text-xs"
         >
           MISSED
-        </button>
-        <button
-          onClick={() => onUndo(player_id)}
-          disabled={isPending || attempted === 0}
-          title="Undo last shot"
-          className="rounded border border-[var(--border-gold)] bg-white/25 backdrop-blur-sm px-2.5 py-1.5 text-base text-[var(--text-muted)] hover:bg-white/20 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 transition-all min-h-[40px] lg:px-1.5 lg:py-1 lg:text-xs lg:min-h-0"
-        >
-          ↩
         </button>
       </div>
 
