@@ -6,15 +6,21 @@ import type { Leaderboard } from '@/lib/db';
 
 type ViewMode = 'match' | 'career' | 'quarter';
 
-interface Section {
-  title: string;
+interface TeamData {
+  id: number;
+  name: string;
   match: Leaderboard[];
   career: Leaderboard[];
+  quarterBoards: Leaderboard[];
 }
 
 interface Props {
-  sections: Section[];
-  quarterBoards: Leaderboard[];
+  clubMatch: Leaderboard[];
+  clubCareer: Leaderboard[];
+  clubQuarter: Leaderboard[];
+  teams: TeamData[];
+  // For team page: single-team mode (no team dropdown)
+  singleTeam?: boolean;
   heading?: string;
   subtitle?: string;
 }
@@ -73,12 +79,34 @@ const VIEW_LABELS: Record<ViewMode, string> = {
   quarter: 'Quarter',
 };
 
-export default function StatsView({ sections, quarterBoards, heading = 'Leaderboards', subtitle = 'Overall club records and team-by-team breakdowns.' }: Props) {
+export default function StatsView({
+  clubMatch, clubCareer, clubQuarter, teams,
+  singleTeam = false,
+  heading = 'Leaderboards',
+  subtitle = 'Overall club records and team-by-team breakdowns.',
+}: Props) {
   const [view, setView] = useState<ViewMode>('match');
   const [uniqueOnly, setUniqueOnly] = useState(true);
+  const [selectedTeam, setSelectedTeam] = useState<number | 'all'>('all');
 
-  const hasMatch = sections.some(s => s.match.length > 0);
-  const hasCareer = sections.some(s => s.career.length > 0);
+  // Get the active boards based on team selection
+  let matchBoards: Leaderboard[];
+  let careerBoards: Leaderboard[];
+  let quarterBoards: Leaderboard[];
+
+  if (selectedTeam === 'all') {
+    matchBoards = clubMatch;
+    careerBoards = clubCareer;
+    quarterBoards = clubQuarter;
+  } else {
+    const team = teams.find(t => t.id === selectedTeam);
+    matchBoards = team?.match ?? [];
+    careerBoards = team?.career ?? [];
+    quarterBoards = team?.quarterBoards ?? [];
+  }
+
+  const hasMatch = matchBoards.length > 0;
+  const hasCareer = careerBoards.length > 0;
   const hasQuarter = quarterBoards.length > 0;
 
   if (!hasMatch && !hasCareer && !hasQuarter) return null;
@@ -90,15 +118,10 @@ export default function StatsView({ sections, quarterBoards, heading = 'Leaderbo
     return false;
   });
 
-  const boards: Leaderboard[] = [];
-  if (view === 'quarter') {
-    boards.push(...quarterBoards);
-  } else {
-    for (const section of sections) {
-      const sectionBoards = view === 'match' ? section.match : section.career;
-      boards.push(...sectionBoards);
-    }
-  }
+  // Reset view if current is no longer available
+  const activeView = availableViews.includes(view) ? view : availableViews[0];
+
+  const boards = activeView === 'quarter' ? quarterBoards : activeView === 'career' ? careerBoards : matchBoards;
 
   return (
     <div className="space-y-4">
@@ -107,9 +130,21 @@ export default function StatsView({ sections, quarterBoards, heading = 'Leaderbo
           <h1 className="text-3xl font-black text-[var(--gold)] font-[family-name:var(--font-display)] uppercase tracking-wide">{heading}</h1>
           <p className="text-sm text-[var(--text-muted)]">{subtitle}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {!singleTeam && teams.length > 0 && (
+            <select
+              value={selectedTeam}
+              onChange={e => setSelectedTeam(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+              className="border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] rounded px-3 py-2 text-xs font-bold uppercase tracking-wide focus:outline-none focus:border-[var(--gold)] cursor-pointer"
+            >
+              <option value="all">All Teams</option>
+              {teams.map(t => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          )}
           <select
-            value={view}
+            value={activeView}
             onChange={e => setView(e.target.value as ViewMode)}
             className="border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] rounded px-3 py-2 text-xs font-bold uppercase tracking-wide focus:outline-none focus:border-[var(--gold)] cursor-pointer"
           >
@@ -130,29 +165,11 @@ export default function StatsView({ sections, quarterBoards, heading = 'Leaderbo
         </div>
       </div>
 
-      {/* Section titles only for match/career when multiple sections */}
-      {view !== 'quarter' && sections.length > 1 ? (
-        sections.map(section => {
-          const sectionBoards = view === 'match' ? section.match : section.career;
-          if (sectionBoards.length === 0) return null;
-          return (
-            <section key={section.title} className="space-y-3">
-              <h2 className="text-xl font-bold text-[var(--text)] font-[family-name:var(--font-display)] uppercase">{section.title}</h2>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {sectionBoards.map(board => (
-                  <LeaderboardCard key={`${section.title}-${board.title}`} board={board} uniqueOnly={uniqueOnly} />
-                ))}
-              </div>
-            </section>
-          );
-        })
-      ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {boards.map(board => (
-            <LeaderboardCard key={board.title} board={board} uniqueOnly={uniqueOnly} />
-          ))}
-        </div>
-      )}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {boards.map(board => (
+          <LeaderboardCard key={board.title} board={board} uniqueOnly={uniqueOnly} />
+        ))}
+      </div>
     </div>
   );
 }

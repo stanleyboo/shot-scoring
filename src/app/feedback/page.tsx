@@ -1,8 +1,11 @@
+import { redirect } from 'next/navigation';
+import { getSettings, canViewPage } from '@/lib/auth';
 import FeedbackForm from '@/components/FeedbackForm';
 
 export const dynamic = 'force-dynamic';
 
-export default function FeedbackPage() {
+export default async function FeedbackPage() {
+  if (!(await canViewPage(getSettings().page_feedback))) redirect('/');
   return (
     <div className="space-y-6">
       <div className="space-y-1">

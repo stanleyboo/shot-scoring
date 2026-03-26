@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getDb, getAnnouncements } from '@/lib/db';
-import { getSettings, isAdmin } from '@/lib/auth';
+import { getSettings, isAdmin, canViewPage } from '@/lib/auth';
 import AnnouncementList from '@/components/AnnouncementList';
 import AnnouncementForm from '@/components/AnnouncementForm';
 
@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function UpdatesPage() {
   const settings = getSettings();
-  if (!settings.feature_updates) redirect('/');
+  if (!(await canViewPage(settings.page_updates))) redirect('/');
 
   const db = getDb();
   const announcements = getAnnouncements(db);

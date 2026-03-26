@@ -139,8 +139,11 @@ export default async function TeamPage({ params }: Props) {
       </section>
 
       <StatsView
-        sections={[{ title: team.name, ...leaderboards }]}
-        quarterBoards={quarterBoards}
+        clubMatch={leaderboards.match}
+        clubCareer={leaderboards.career}
+        clubQuarter={quarterBoards}
+        teams={[]}
+        singleTeam
         heading="Team Leaderboards"
         subtitle={`${team.name} records across all matches.`}
       />

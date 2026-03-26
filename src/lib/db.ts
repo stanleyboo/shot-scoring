@@ -312,9 +312,25 @@ export function applySchema(db: Database.Database): void {
     );
   `);
 
-  // Feature flag settings
-  db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('feature_social', '0')").run();
-  db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('feature_updates', '0')").run();
+  // Page visibility settings (all/admin/off)
+  db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('page_matches', 'all')").run();
+  db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('page_players', 'all')").run();
+  db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('page_teams', 'all')").run();
+  db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('page_stats', 'all')").run();
+  db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('page_feedback', 'all')").run();
+  db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('page_social', 'off')").run();
+  db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('page_updates', 'off')").run();
+  // Migrate old feature flags
+  const oldSocial = db.prepare("SELECT value FROM settings WHERE key = 'feature_social'").get() as { value: string } | undefined;
+  if (oldSocial) {
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('page_social', ?)").run(oldSocial.value === '1' ? 'all' : 'off');
+    db.prepare("DELETE FROM settings WHERE key = 'feature_social'").run();
+  }
+  const oldUpdates = db.prepare("SELECT value FROM settings WHERE key = 'feature_updates'").get() as { value: string } | undefined;
+  if (oldUpdates) {
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('page_updates', ?)").run(oldUpdates.value === '1' ? 'all' : 'off');
+    db.prepare("DELETE FROM settings WHERE key = 'feature_updates'").run();
+  }
 
   const seedTypes = ['Interceptions', 'Assists', 'Turnovers', 'Feeds'];
   const insertType = db.prepare('INSERT OR IGNORE INTO stat_types (name) VALUES (?)');

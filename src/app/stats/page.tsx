@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getDb, getAllStatTypes, getAllLeaderboards, getAllTeams, getQuarterLeaderboards } from '@/lib/db';
-import { isAdmin } from '@/lib/auth';
+import { redirect } from 'next/navigation';
+import { isAdmin, getSettings, canViewPage } from '@/lib/auth';
 import AddStatTypeForm from '@/components/AddStatTypeForm';
 import StatTypeList from '@/components/StatTypeList';
 import StatsView from '@/components/StatsView';
@@ -8,23 +9,33 @@ import StatsView from '@/components/StatsView';
 export const dynamic = 'force-dynamic';
 
 export default async function StatsPage() {
+  if (!(await canViewPage(getSettings().page_stats))) redirect('/');
   const db = getDb();
   const admin = await isAdmin();
   const statTypes = getAllStatTypes(db);
   const teams = getAllTeams(db);
-  const clubBoards = getAllLeaderboards(db);
-  const sections = [
-    { title: 'Club Leaderboards', ...clubBoards },
-    ...teams.map(team => ({ title: team.name, ...getAllLeaderboards(db, team.id) })),
-  ];
-  const quarterBoards = getQuarterLeaderboards(db);
 
-  const hasData = sections.some(s => s.match.length > 0 || s.career.length > 0) || quarterBoards.length > 0;
+  const clubBoards = getAllLeaderboards(db);
+  const clubQuarterBoards = getQuarterLeaderboards(db);
+
+  const teamData = teams.map(team => ({
+    id: team.id,
+    name: team.name,
+    ...getAllLeaderboards(db, team.id),
+    quarterBoards: getQuarterLeaderboards(db, team.id),
+  }));
+
+  const hasData = clubBoards.match.length > 0 || clubBoards.career.length > 0 || clubQuarterBoards.length > 0;
 
   return (
     <div className="space-y-8">
       {hasData ? (
-        <StatsView sections={sections} quarterBoards={quarterBoards} />
+        <StatsView
+          clubMatch={clubBoards.match}
+          clubCareer={clubBoards.career}
+          clubQuarter={clubQuarterBoards}
+          teams={teamData}
+        />
       ) : (
         <div className="border border-dashed border-[var(--gold)]/30 bg-white/25 backdrop-blur-sm rounded p-12 text-center">
           <p className="text-[var(--text-muted)]">Play some matches to see leaderboards.</p>

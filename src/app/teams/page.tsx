@@ -1,6 +1,7 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { getDb, getAllTeams, getTeamSummaries } from '@/lib/db';
-import { isAdmin } from '@/lib/auth';
+import { isAdmin, getSettings, canViewPage } from '@/lib/auth';
 import AddTeamForm from '@/components/AddTeamForm';
 import TeamList from '@/components/TeamList';
 
@@ -12,6 +13,7 @@ function formatPct(goals: number, attempts: number) {
 }
 
 export default async function TeamsPage() {
+  if (!(await canViewPage(getSettings().page_teams))) redirect('/');
   const db = getDb();
   const admin = await isAdmin();
   const teams = getAllTeams(db);

@@ -2,28 +2,32 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import type { PageVisibility } from '@/lib/auth';
 
 interface Props {
   isAdmin: boolean;
-  features?: { social?: boolean; updates?: boolean };
+  pageVisibility: Record<string, PageVisibility>;
 }
 
-const baseLinks = [
-  { href: '/sessions', label: 'Matches' },
-  { href: '/players', label: 'Players' },
-  { href: '/teams', label: 'Teams' },
-  { href: '/stats', label: 'Stats' },
+const allLinks = [
+  { href: '/sessions', label: 'Matches', key: 'page_matches' },
+  { href: '/players', label: 'Players', key: 'page_players' },
+  { href: '/teams', label: 'Teams', key: 'page_teams' },
+  { href: '/stats', label: 'Stats', key: 'page_stats' },
+  { href: '/feedback', label: 'Feedback', key: 'page_feedback' },
+  { href: '/social', label: 'Social', key: 'page_social' },
+  { href: '/updates', label: 'Updates', key: 'page_updates' },
 ];
 
-export default function NavLinks({ isAdmin, features }: Props) {
+export default function NavLinks({ isAdmin, pageVisibility }: Props) {
   const pathname = usePathname();
 
-  const links = [
-    ...baseLinks,
-    ...(features?.social ? [{ href: '/social', label: 'Social' }] : []),
-    ...(features?.updates ? [{ href: '/updates', label: 'Updates' }] : []),
-    { href: '/feedback', label: 'Feedback' },
-  ];
+  const links = allLinks.filter(link => {
+    const vis = pageVisibility[link.key] ?? 'all';
+    if (vis === 'off') return false;
+    if (vis === 'admin') return isAdmin;
+    return true;
+  });
 
   function isActive(href: string) {
     if (href === '/') return pathname === '/';

@@ -38,9 +38,15 @@ export async function logout(): Promise<void> {
   revalidatePath('/');
 }
 
-export async function updateAdminSetting(key: string, value: boolean): Promise<void> {
+const ALLOWED_SETTINGS = [
+  'public_can_create', 'public_can_edit',
+  'page_matches', 'page_players', 'page_teams', 'page_stats',
+  'page_feedback', 'page_social', 'page_updates',
+];
+
+export async function updateAdminSetting(key: string, value: boolean | string): Promise<void> {
   if (!(await isAdmin())) throw new Error('Unauthorized');
-  if (!['public_can_create', 'public_can_edit', 'feature_social', 'feature_updates'].includes(key)) {
+  if (!ALLOWED_SETTINGS.includes(key)) {
     throw new Error('Invalid setting');
   }
   updateSetting(key, value);

@@ -3,7 +3,7 @@
 import { useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateAdminSetting } from '@/actions/auth';
-import type { AppSettings } from '@/lib/auth';
+import type { AppSettings, PageVisibility } from '@/lib/auth';
 
 interface Props {
   settings: AppSettings;
@@ -37,6 +37,59 @@ function Toggle({ label, description, checked, onChange, disabled }: {
   );
 }
 
+const VISIBILITY_OPTIONS: { value: PageVisibility; label: string }[] = [
+  { value: 'all', label: 'Everyone' },
+  { value: 'admin', label: 'Admin only' },
+  { value: 'off', label: 'Off' },
+];
+
+function VisibilityPicker({ label, description, value, onChange, disabled }: {
+  label: string;
+  description: string;
+  value: PageVisibility;
+  onChange: (v: PageVisibility) => void;
+  disabled: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 rounded border border-[var(--border)] bg-white/25 backdrop-blur-sm p-4 gold-accent">
+      <div>
+        <p className="font-medium text-[var(--text)]">{label}</p>
+        <p className="text-sm text-[var(--text-dim)]">{description}</p>
+      </div>
+      <div className="flex rounded overflow-hidden border border-[var(--border)] flex-shrink-0">
+        {VISIBILITY_OPTIONS.map(opt => (
+          <button
+            key={opt.value}
+            onClick={() => onChange(opt.value)}
+            disabled={disabled}
+            className={`px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide transition ${
+              value === opt.value
+                ? opt.value === 'off'
+                  ? 'bg-[var(--red)] text-white'
+                  : opt.value === 'admin'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-[var(--gold)] text-[var(--bg)]'
+                : 'bg-transparent text-[var(--text-dim)] hover:text-[var(--text-muted)]'
+            } disabled:opacity-50`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const PAGE_SETTINGS: { key: keyof AppSettings; label: string; description: string }[] = [
+  { key: 'page_matches', label: 'Matches', description: 'Match list and scoring pages' },
+  { key: 'page_players', label: 'Players', description: 'Player profiles and management' },
+  { key: 'page_teams', label: 'Teams', description: 'Team pages and team stats' },
+  { key: 'page_stats', label: 'Stats', description: 'Leaderboards and stat management' },
+  { key: 'page_feedback', label: 'Feedback', description: 'Feedback submission page' },
+  { key: 'page_social', label: 'Social / Chat', description: 'Message board for players' },
+  { key: 'page_updates', label: 'Updates & Fixtures', description: 'Club announcements and match fixtures' },
+];
+
 export default function AdminSettings({ settings }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -44,6 +97,13 @@ export default function AdminSettings({ settings }: Props) {
   function handleToggle(key: keyof AppSettings) {
     startTransition(async () => {
       await updateAdminSetting(key, !settings[key]);
+      router.refresh();
+    });
+  }
+
+  function handleVisibility(key: keyof AppSettings, value: PageVisibility) {
+    startTransition(async () => {
+      await updateAdminSetting(key, value);
       router.refresh();
     });
   }
@@ -67,22 +127,18 @@ export default function AdminSettings({ settings }: Props) {
         disabled={isPending}
       />
 
-      <h2 className="text-lg font-semibold text-[var(--text-muted)] font-[family-name:var(--font-display)] uppercase tracking-wide mt-6">Features</h2>
-      <p className="text-sm text-[var(--text-dim)]">Toggle sections on and off. Disabled features are hidden from everyone.</p>
-      <Toggle
-        label="Social / Chat"
-        description="Message board where players can post messages using their name."
-        checked={settings.feature_social}
-        onChange={() => handleToggle('feature_social')}
-        disabled={isPending}
-      />
-      <Toggle
-        label="Updates & Fixtures"
-        description="Announcements section for match fixtures, training sessions, and club updates."
-        checked={settings.feature_updates}
-        onChange={() => handleToggle('feature_updates')}
-        disabled={isPending}
-      />
+      <h2 className="text-lg font-semibold text-[var(--text-muted)] font-[family-name:var(--font-display)] uppercase tracking-wide mt-6">Page Visibility</h2>
+      <p className="text-sm text-[var(--text-dim)]">Control who can see each section. &ldquo;Admin only&rdquo; pages are visible only when logged in.</p>
+      {PAGE_SETTINGS.map(ps => (
+        <VisibilityPicker
+          key={ps.key}
+          label={ps.label}
+          description={ps.description}
+          value={settings[ps.key] as PageVisibility}
+          onChange={v => handleVisibility(ps.key, v)}
+          disabled={isPending}
+        />
+      ))}
     </div>
   );
 }

@@ -1,13 +1,13 @@
 import { redirect } from 'next/navigation';
 import { getDb, getMessages, getMessageCount } from '@/lib/db';
-import { getSettings, isAdmin } from '@/lib/auth';
+import { getSettings, isAdmin, canViewPage } from '@/lib/auth';
 import MessageFeed from '@/components/MessageFeed';
 
 export const dynamic = 'force-dynamic';
 
 export default async function SocialPage() {
   const settings = getSettings();
-  if (!settings.feature_social) redirect('/');
+  if (!(await canViewPage(settings.page_social))) redirect('/');
 
   const db = getDb();
   const messages = getMessages(db);

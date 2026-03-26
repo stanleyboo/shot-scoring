@@ -1,11 +1,13 @@
+import { redirect } from 'next/navigation';
 import { getDb, getAllPlayersWithShots, getAllTeams } from '@/lib/db';
-import { isAdmin } from '@/lib/auth';
+import { isAdmin, getSettings, canViewPage } from '@/lib/auth';
 import AddPlayerForm from '@/components/AddPlayerForm';
 import PlayerListPage from '@/components/PlayerListPage';
 
 export const dynamic = 'force-dynamic';
 
 export default async function PlayersPage() {
+  if (!(await canViewPage(getSettings().page_players))) redirect('/');
   const db = getDb();
   const admin = await isAdmin();
   const teams = getAllTeams(db);
