@@ -1571,7 +1571,7 @@ export interface Announcement {
   id: number;
   title: string;
   content: string;
-  type: 'update' | 'match' | 'training';
+  type: 'update' | 'match' | 'training' | 'social';
   event_date: string | null;
   event_time: string | null;
   location: string | null;

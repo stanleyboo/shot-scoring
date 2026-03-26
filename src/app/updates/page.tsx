@@ -17,8 +17,8 @@ export default async function UpdatesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-black text-[var(--gold)] font-[family-name:var(--font-display)] uppercase tracking-wide">Updates</h1>
-        <p className="text-sm text-[var(--text-muted)]">Club announcements, upcoming matches, and training sessions.</p>
+        <h1 className="text-3xl font-black text-[var(--gold)] font-[family-name:var(--font-display)] uppercase tracking-wide">Langwith Netball Calendar</h1>
+        <p className="text-sm text-[var(--text-muted)]">Matches, training, socials, and club announcements.</p>
       </div>
 
       {admin && <AnnouncementForm />}

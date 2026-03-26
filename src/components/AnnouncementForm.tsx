@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { addAnnouncement } from '@/actions/announcements';
 
-type AnnouncementType = 'match' | 'training' | 'update';
+type AnnouncementType = 'match' | 'training' | 'social' | 'update';
 
 const TEMPLATES: { type: AnnouncementType; label: string; icon: string; color: string; defaults: { title: string; content: string } }[] = [
   {
@@ -20,6 +20,13 @@ const TEMPLATES: { type: AnnouncementType; label: string; icon: string; color: s
     icon: '💪',
     color: 'border-blue-500 bg-blue-500/10 hover:bg-blue-500/20',
     defaults: { title: 'Training Session', content: '' },
+  },
+  {
+    type: 'social',
+    label: 'Social',
+    icon: '🎉',
+    color: 'border-purple-500 bg-purple-500/10 hover:bg-purple-500/20',
+    defaults: { title: '', content: '' },
   },
   {
     type: 'update',
@@ -90,7 +97,7 @@ export default function AnnouncementForm() {
   // Template picker
   if (!selectedType) {
     return (
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {TEMPLATES.map(tpl => (
           <button
             key={tpl.type}
@@ -107,7 +114,7 @@ export default function AnnouncementForm() {
     );
   }
 
-  const isEvent = selectedType === 'match' || selectedType === 'training';
+  const isEvent = selectedType === 'match' || selectedType === 'training' || selectedType === 'social';
   const tpl = TEMPLATES.find(t => t.type === selectedType)!;
 
   return (
@@ -125,7 +132,7 @@ export default function AnnouncementForm() {
         type="text"
         value={title}
         onChange={e => setTitle(e.target.value)}
-        placeholder={selectedType === 'match' ? 'e.g. vs York St John' : selectedType === 'training' ? 'e.g. Training Session' : 'Title'}
+        placeholder={selectedType === 'match' ? 'e.g. vs York St John' : selectedType === 'training' ? 'e.g. Training Session' : selectedType === 'social' ? 'e.g. Team Night Out' : 'Title'}
         maxLength={100}
         className="w-full border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] rounded px-3 py-2 text-sm focus:outline-none focus:border-[var(--gold)]"
       />
@@ -169,7 +176,7 @@ export default function AnnouncementForm() {
       <textarea
         value={content}
         onChange={e => setContent(e.target.value)}
-        placeholder={selectedType === 'match' ? 'Match details, meeting point, kit info...' : selectedType === 'training' ? 'What to bring, focus areas...' : 'Details...'}
+        placeholder={selectedType === 'match' ? 'Match details, meeting point, kit info...' : selectedType === 'training' ? 'What to bring, focus areas...' : selectedType === 'social' ? 'What to expect, dress code, cost...' : 'Details...'}
         maxLength={1000}
         rows={3}
         className="w-full border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] rounded px-3 py-2 text-sm focus:outline-none focus:border-[var(--gold)] resize-none"

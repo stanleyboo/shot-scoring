@@ -87,7 +87,7 @@ const PAGE_SETTINGS: { key: keyof AppSettings; label: string; description: strin
   { key: 'page_stats', label: 'Stats', description: 'Leaderboards and stat management' },
   { key: 'page_feedback', label: 'Feedback', description: 'Feedback submission page' },
   { key: 'page_social', label: 'Social / Chat', description: 'Message board for players' },
-  { key: 'page_updates', label: 'Updates & Fixtures', description: 'Club announcements and match fixtures' },
+  { key: 'page_updates', label: 'Calendar', description: 'Langwith Netball Calendar — matches, training, socials, and announcements' },
 ];
 
 export default function AdminSettings({ settings }: Props) {

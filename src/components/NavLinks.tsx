@@ -16,7 +16,7 @@ const allLinks = [
   { href: '/stats', label: 'Stats', key: 'page_stats' },
   { href: '/feedback', label: 'Feedback', key: 'page_feedback' },
   { href: '/social', label: 'Social', key: 'page_social' },
-  { href: '/updates', label: 'Updates', key: 'page_updates' },
+  { href: '/updates', label: 'Calendar', key: 'page_updates' },
 ];
 
 export default function NavLinks({ isAdmin, pageVisibility }: Props) {

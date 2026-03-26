@@ -13,6 +13,7 @@ interface Props {
 const TYPE_CONFIG: Record<string, { label: string; icon: string; color: string; border: string }> = {
   match: { label: 'Upcoming Matches', icon: '🏐', color: 'bg-[var(--green)]', border: 'border-l-[var(--green)]' },
   training: { label: 'Training Sessions', icon: '💪', color: 'bg-blue-500', border: 'border-l-blue-500' },
+  social: { label: 'Socials', icon: '🎉', color: 'bg-purple-500', border: 'border-l-purple-500' },
   update: { label: 'Announcements', icon: '📢', color: 'bg-[var(--gold)]', border: 'border-l-[var(--gold)]' },
 };
 
@@ -122,7 +123,7 @@ export default function AnnouncementList({ announcements, isAdmin }: Props) {
   }
 
   // Group by type, ordering: matches first, then training, then updates
-  const typeOrder: string[] = ['match', 'training', 'update'];
+  const typeOrder: string[] = ['match', 'training', 'social', 'update'];
   const grouped = typeOrder
     .map(type => ({
       type,
