@@ -5,53 +5,52 @@ import Link from 'next/link';
 import type { Leaderboard } from '@/lib/db';
 
 interface Props {
-  quarters: { quarter: number; boards: Leaderboard[] }[];
+  boards: Leaderboard[];
 }
 
-export default function QuarterLeaderboards({ quarters }: Props) {
-  const [activeQ, setActiveQ] = useState(quarters[0]?.quarter ?? 1);
-  const active = quarters.find(q => q.quarter === activeQ);
+export default function QuarterLeaderboards({ boards }: Props) {
+  const [uniqueOnly, setUniqueOnly] = useState(true);
+
+  const filterEntries = (board: Leaderboard) => {
+    if (!uniqueOnly) return board.entries;
+    const seen = new Set<number>();
+    return board.entries.filter(entry => {
+      if (seen.has(entry.player_id)) return false;
+      seen.add(entry.player_id);
+      return true;
+    });
+  };
 
   return (
     <section className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-[var(--text)] font-[family-name:var(--font-display)] uppercase">Per Quarter Stats</h2>
-          <p className="text-sm text-[var(--text-muted)]">Career totals broken down by quarter.</p>
+          <p className="text-sm text-[var(--text-muted)]">Career totals broken down by quarter — shows who performs best in each quarter.</p>
         </div>
-        <div className="flex gap-1">
-          {[1, 2, 3, 4].map(q => {
-            const hasData = quarters.some(qb => qb.quarter === q);
-            return (
-              <button
-                key={q}
-                onClick={() => setActiveQ(q)}
-                disabled={!hasData}
-                className={`px-3 py-1.5 text-sm font-bold rounded transition-all font-[family-name:var(--font-display)] ${
-                  activeQ === q
-                    ? 'bg-[var(--gold)] text-[var(--bg)]'
-                    : hasData
-                      ? 'border border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--gold)]'
-                      : 'border border-[var(--border)] text-[var(--text-dim)] opacity-40 cursor-not-allowed'
-                }`}
-              >
-                Q{q}
-              </button>
-            );
-          })}
-        </div>
+        <button
+          onClick={() => setUniqueOnly(!uniqueOnly)}
+          className={`border px-4 py-2 rounded text-xs font-black uppercase tracking-wide transition ${
+            uniqueOnly
+              ? 'border-[var(--gold)] bg-[var(--gold)] text-[var(--bg)]'
+              : 'border-[var(--border)] bg-white/25 backdrop-blur-sm text-[var(--text-muted)] hover:border-[var(--gold)]'
+          }`}
+        >
+          {uniqueOnly ? 'Best per player' : 'All entries'}
+        </button>
       </div>
 
-      {active && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {active.boards.map(board => (
-            <div key={board.title} className="overflow-hidden border border-[var(--border)] bg-white/25 backdrop-blur-sm rounded">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {boards.map(board => {
+          const entries = filterEntries(board);
+          return (
+            <div key={`${board.title}`} className="overflow-hidden border border-[var(--border)] bg-white/25 backdrop-blur-sm rounded">
               <div className="border-b border-[var(--border)] bg-[var(--gold)] px-4 py-3">
                 <h3 className="text-sm font-black uppercase tracking-wide text-[var(--bg)] font-[family-name:var(--font-display)]">{board.title}</h3>
                 <p className="text-[11px] text-[var(--bg)]/70">{board.subtitle}</p>
               </div>
               <ul className="divide-y divide-[var(--border)]">
-                {board.entries.map((entry, index) => (
+                {entries.map((entry, index) => (
                   <li key={entry.player_id} className="flex items-center justify-between gap-2 px-4 py-3">
                     <div className="flex min-w-0 items-center gap-3">
                       <span className={`w-5 text-right text-sm font-bold tabular-nums ${
@@ -73,9 +72,9 @@ export default function QuarterLeaderboards({ quarters }: Props) {
                 ))}
               </ul>
             </div>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </div>
     </section>
   );
 }

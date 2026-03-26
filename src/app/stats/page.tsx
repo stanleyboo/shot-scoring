@@ -24,7 +24,7 @@ export default async function StatsPage() {
     <div className="space-y-8">
       <LeaderboardSection sections={sections} />
 
-      {quarterBoards.length > 0 && <QuarterLeaderboards quarters={quarterBoards} />}
+      {quarterBoards.length > 0 && <QuarterLeaderboards boards={quarterBoards} />}
 
       {sections.every(s => s.match.length === 0 && s.career.length === 0) && (
         <div className="border border-dashed border-[var(--gold)]/30 bg-white/25 backdrop-blur-sm rounded p-12 text-center">

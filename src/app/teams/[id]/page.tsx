@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Breadcrumb from '@/components/Breadcrumb';
+import TeamLeaderboards from '@/components/TeamLeaderboards';
 import {
   getDb,
   getAllLeaderboards,
@@ -135,40 +136,7 @@ export default async function TeamPage({ params }: Props) {
         </div>
       </section>
 
-      <section className="space-y-4">
-        <h2 className="text-xl font-bold text-[var(--text)] font-[family-name:var(--font-display)] uppercase">Team Leaderboards</h2>
-        {(leaderboards.match.length > 0 || leaderboards.career.length > 0) ? (
-          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-            {[...leaderboards.match, ...leaderboards.career].map(board => (
-              <div key={`${board.title}-${board.subtitle}`} className="overflow-hidden border-2 border-[var(--border)] bg-white/25 backdrop-blur-sm">
-                <div className="border-b-2 border-[var(--border)] bg-[var(--gold)] px-4 py-3">
-                  <p className="text-sm font-black uppercase tracking-wide text-[var(--bg)] font-[family-name:var(--font-display)]">{board.title}</p>
-                  <p className="text-xs text-[var(--bg)]/70">{board.subtitle}</p>
-                </div>
-                <ul className="divide-y divide-[var(--border)]">
-                  {board.entries.slice(0, 5).map(entry => (
-                    <li key={`${board.title}-${entry.player_id}-${entry.label ?? 'career'}`} className="flex items-center justify-between px-4 py-3">
-                      <div className="min-w-0">
-                        <Link href={`/players/${entry.player_id}`} className="block truncate text-sm font-medium text-[var(--text)] transition hover:text-[var(--gold)]">
-                          {entry.name}
-                        </Link>
-                        {entry.label && <p className="truncate text-xs text-[var(--text-dim)]">{entry.label}</p>}
-                      </div>
-                      <span className="text-sm font-bold text-[var(--text)]">
-                        {board.format === 'percent' ? `${entry.value}%` : entry.value}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="border-2 border-dashed border-[var(--gold)]/30 bg-white/25 backdrop-blur-sm p-8 text-center text-[var(--text-dim)]">
-            Team leaderboards will populate once match data is recorded.
-          </div>
-        )}
-      </section>
+      <TeamLeaderboards leaderboards={leaderboards} />
 
       {sessions.length > 0 && statTypes.length > 0 && (
         <section className="space-y-2">

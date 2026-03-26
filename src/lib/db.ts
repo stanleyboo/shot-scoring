@@ -1227,13 +1227,11 @@ export function getAllLeaderboards(
 export function getQuarterLeaderboards(
   db: Database.Database,
   teamId?: number
-): { quarter: number; boards: Leaderboard[] }[] {
+): Leaderboard[] {
   const params = teamId ? { teamId } : {};
-  const results: { quarter: number; boards: Leaderboard[] }[] = [];
+  const boards: Leaderboard[] = [];
 
   for (const q of [1, 2, 3, 4]) {
-    const boards: Leaderboard[] = [];
-
     const goals = db
       .prepare(
         `SELECT p.id AS player_id, p.name, COUNT(*) AS value
@@ -1247,7 +1245,7 @@ export function getQuarterLeaderboards(
       )
       .all({ ...params, quarter: q }) as LeaderboardEntry[];
     if (goals.length > 0) {
-      boards.push({ title: 'Most Goals', subtitle: `Q${q} totals`, entries: goals });
+      boards.push({ title: `Most Goals Q${q}`, subtitle: `Total goals scored in quarter ${q}`, entries: goals });
     }
 
     const pctBoard = db
@@ -1265,15 +1263,54 @@ export function getQuarterLeaderboards(
       )
       .all({ ...params, quarter: q }) as LeaderboardEntry[];
     if (pctBoard.length > 0) {
-      boards.push({ title: 'Best Shot %', subtitle: `Q${q} min. 5 attempts`, format: 'percent', entries: pctBoard });
+      boards.push({ title: `Best Shot % Q${q}`, subtitle: `Min. 5 attempts in quarter ${q}`, format: 'percent', entries: pctBoard });
     }
 
-    if (boards.length > 0) {
-      results.push({ quarter: q, boards });
+    // Stat types per quarter
+    const statTypes = getAllStatTypes(db, true);
+    for (const st of statTypes) {
+      const statBoard = db
+        .prepare(
+          `SELECT p.id AS player_id, p.name, COUNT(*) AS value
+           FROM stat_events se
+           JOIN players p ON p.id = se.player_id
+           JOIN sessions s ON s.id = se.session_id
+           WHERE se.stat_type_id = @statTypeId AND se.quarter = @quarter AND s.deleted_at IS NULL${teamId ? ' AND s.team_id = @teamId' : ''}
+           GROUP BY p.id
+           ORDER BY value DESC
+           LIMIT 5`
+        )
+        .all({ ...params, statTypeId: st.id, quarter: q }) as LeaderboardEntry[];
+      if (statBoard.length > 0) {
+        boards.push({ title: `${st.name} Q${q}`, subtitle: `Total in quarter ${q}`, entries: statBoard });
+      }
+    }
+
+    // Combined interceptions per quarter
+    const interceptTypes = db.prepare(
+      "SELECT id FROM stat_types WHERE enabled = 1 AND name LIKE 'Interception%'"
+    ).all() as { id: number }[];
+    if (interceptTypes.length > 1) {
+      const ids = interceptTypes.map(t => t.id).join(',');
+      const combined = db
+        .prepare(
+          `SELECT p.id AS player_id, p.name, COUNT(*) AS value
+           FROM stat_events se
+           JOIN players p ON p.id = se.player_id
+           JOIN sessions s ON s.id = se.session_id
+           WHERE se.stat_type_id IN (${ids}) AND se.quarter = @quarter AND s.deleted_at IS NULL${teamId ? ' AND s.team_id = @teamId' : ''}
+           GROUP BY p.id
+           ORDER BY value DESC
+           LIMIT 5`
+        )
+        .all({ ...params, quarter: q }) as LeaderboardEntry[];
+      if (combined.length > 0) {
+        boards.push({ title: `Interceptions (Total) Q${q}`, subtitle: `All interception types in quarter ${q}`, entries: combined });
+      }
     }
   }
 
-  return results;
+  return boards;
 }
 
 export function getMatchResults(
