@@ -308,9 +308,18 @@ export function applySchema(db: Database.Database): void {
       content    TEXT NOT NULL,
       type       TEXT NOT NULL DEFAULT 'update',
       event_date TEXT,
+      event_time TEXT,
+      location   TEXT,
+      opponent   TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
   `);
+
+  // Migrate: add new columns if missing
+  const annCols = db.pragma('table_info(announcements)') as { name: string }[];
+  if (!annCols.some(c => c.name === 'event_time')) db.exec('ALTER TABLE announcements ADD COLUMN event_time TEXT');
+  if (!annCols.some(c => c.name === 'location')) db.exec('ALTER TABLE announcements ADD COLUMN location TEXT');
+  if (!annCols.some(c => c.name === 'opponent')) db.exec('ALTER TABLE announcements ADD COLUMN opponent TEXT');
 
   // Page visibility settings (all/admin/off)
   db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('page_matches', 'all')").run();
@@ -1564,31 +1573,43 @@ export interface Announcement {
   content: string;
   type: 'update' | 'match' | 'training';
   event_date: string | null;
+  event_time: string | null;
+  location: string | null;
+  opponent: string | null;
   created_at: string;
 }
 
 export function getAnnouncements(db: Database.Database): Announcement[] {
-  return db.prepare('SELECT * FROM announcements ORDER BY created_at DESC').all() as Announcement[];
+  return db.prepare(`
+    SELECT * FROM announcements
+    ORDER BY
+      CASE WHEN event_date IS NOT NULL AND event_date >= date('now') THEN 0 ELSE 1 END,
+      event_date ASC,
+      created_at DESC
+  `).all() as Announcement[];
 }
 
-export function getUpcomingAnnouncements(db: Database.Database): Announcement[] {
+export function createAnnouncement(
+  db: Database.Database,
+  data: { title: string; content: string; type: string; event_date: string | null; event_time: string | null; location: string | null; opponent: string | null }
+): Announcement {
+  const t = data.title.trim();
+  const c = data.content.trim();
+  if (!t) throw new Error('Title is required');
+  if (!c) throw new Error('Content is required');
   return db.prepare(
-    "SELECT * FROM announcements WHERE event_date IS NULL OR event_date >= date('now') ORDER BY CASE WHEN event_date IS NOT NULL THEN 0 ELSE 1 END, event_date ASC, created_at DESC"
-  ).all() as Announcement[];
+    'INSERT INTO announcements (title, content, type, event_date, event_time, location, opponent) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *'
+  ).get(t, c, data.type, data.event_date || null, data.event_time || null, data.location?.trim() || null, data.opponent?.trim() || null) as Announcement;
 }
 
-export function createAnnouncement(db: Database.Database, title: string, content: string, type: string, eventDate: string | null): Announcement {
-  const trimTitle = title.trim();
-  const trimContent = content.trim();
-  if (!trimTitle) throw new Error('Title is required');
-  if (!trimContent) throw new Error('Content is required');
-  return db.prepare('INSERT INTO announcements (title, content, type, event_date) VALUES (?, ?, ?, ?) RETURNING *')
-    .get(trimTitle, trimContent, type, eventDate || null) as Announcement;
-}
-
-export function updateAnnouncement(db: Database.Database, id: number, title: string, content: string, type: string, eventDate: string | null): void {
-  db.prepare('UPDATE announcements SET title = ?, content = ?, type = ?, event_date = ? WHERE id = ?')
-    .run(title.trim(), content.trim(), type, eventDate || null, id);
+export function updateAnnouncement(
+  db: Database.Database,
+  id: number,
+  data: { title: string; content: string; type: string; event_date: string | null; event_time: string | null; location: string | null; opponent: string | null }
+): void {
+  db.prepare(
+    'UPDATE announcements SET title = ?, content = ?, type = ?, event_date = ?, event_time = ?, location = ?, opponent = ? WHERE id = ?'
+  ).run(data.title.trim(), data.content.trim(), data.type, data.event_date || null, data.event_time || null, data.location?.trim() || null, data.opponent?.trim() || null, id);
 }
 
 export function deleteAnnouncement(db: Database.Database, id: number): void {

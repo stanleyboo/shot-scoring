@@ -4,15 +4,20 @@ import { revalidatePath } from 'next/cache';
 import { getDb, createAnnouncement, updateAnnouncement, deleteAnnouncement } from '@/lib/db';
 import { isAdmin } from '@/lib/auth';
 
-export async function addAnnouncement(
-  title: string,
-  content: string,
-  type: string,
-  eventDate: string | null
-): Promise<{ ok: boolean; error?: string }> {
+interface AnnouncementData {
+  title: string;
+  content: string;
+  type: string;
+  event_date: string | null;
+  event_time: string | null;
+  location: string | null;
+  opponent: string | null;
+}
+
+export async function addAnnouncement(data: AnnouncementData): Promise<{ ok: boolean; error?: string }> {
   if (!(await isAdmin())) return { ok: false, error: 'Unauthorized' };
   try {
-    createAnnouncement(getDb(), title, content, type, eventDate);
+    createAnnouncement(getDb(), data);
     revalidatePath('/updates');
     revalidatePath('/');
     return { ok: true };
@@ -21,16 +26,10 @@ export async function addAnnouncement(
   }
 }
 
-export async function editAnnouncement(
-  id: number,
-  title: string,
-  content: string,
-  type: string,
-  eventDate: string | null
-): Promise<{ ok: boolean; error?: string }> {
+export async function editAnnouncement(id: number, data: AnnouncementData): Promise<{ ok: boolean; error?: string }> {
   if (!(await isAdmin())) return { ok: false, error: 'Unauthorized' };
   try {
-    updateAnnouncement(getDb(), id, title, content, type, eventDate);
+    updateAnnouncement(getDb(), id, data);
     revalidatePath('/updates');
     revalidatePath('/');
     return { ok: true };
