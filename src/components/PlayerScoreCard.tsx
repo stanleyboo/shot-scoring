@@ -119,14 +119,14 @@ export default function PlayerScoreCard({
         <button
           onClick={() => onShot(player_id, true)}
           disabled={isPending}
-          className="flex-1 rounded bg-[var(--green)] py-3 text-sm font-black text-[var(--text)] hover:bg-green-500 active:scale-95 disabled:opacity-50 transition-all min-h-[44px] sm:text-base lg:py-1 lg:text-[11px] lg:min-h-0"
+          className="flex-1 rounded bg-[var(--green)] py-1.5 text-sm font-black text-[var(--text)] hover:bg-green-500 active:scale-95 disabled:opacity-50 transition-all min-h-[40px] sm:text-base lg:py-1 lg:text-[11px] lg:min-h-0"
         >
           SCORED
         </button>
         <button
           onClick={() => onShot(player_id, false)}
           disabled={isPending}
-          className="flex-1 rounded bg-[var(--red)] py-3 text-sm font-black text-[var(--text)] hover:bg-[var(--red-hover)] active:scale-95 disabled:opacity-50 transition-all min-h-[44px] sm:text-base lg:py-1 lg:text-[11px] lg:min-h-0"
+          className="flex-1 rounded bg-[var(--red)] py-1.5 text-sm font-black text-[var(--text)] hover:bg-[var(--red-hover)] active:scale-95 disabled:opacity-50 transition-all min-h-[40px] sm:text-base lg:py-1 lg:text-[11px] lg:min-h-0"
         >
           MISSED
         </button>
@@ -134,7 +134,7 @@ export default function PlayerScoreCard({
           onClick={() => onUndo(player_id)}
           disabled={isPending || attempted === 0}
           title="Undo last shot"
-          className="rounded border border-[var(--border-gold)] bg-white/25 backdrop-blur-sm px-2.5 py-3 text-base text-[var(--text-muted)] hover:bg-white/20 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 transition-all min-h-[44px] lg:px-1.5 lg:py-1 lg:text-xs lg:min-h-0"
+          className="rounded border border-[var(--border-gold)] bg-white/25 backdrop-blur-sm px-2.5 py-1.5 text-base text-[var(--text-muted)] hover:bg-white/20 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 transition-all min-h-[40px] lg:px-1.5 lg:py-1 lg:text-xs lg:min-h-0"
         >
           ↩
         </button>

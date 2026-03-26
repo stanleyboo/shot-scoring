@@ -3,8 +3,7 @@ import { getDb, getAllStatTypes, getAllLeaderboards, getAllTeams, getQuarterLead
 import { isAdmin } from '@/lib/auth';
 import AddStatTypeForm from '@/components/AddStatTypeForm';
 import StatTypeList from '@/components/StatTypeList';
-import LeaderboardSection from '@/components/LeaderboardSection';
-import QuarterLeaderboards from '@/components/QuarterLeaderboards';
+import StatsView from '@/components/StatsView';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,13 +19,13 @@ export default async function StatsPage() {
   ];
   const quarterBoards = getQuarterLeaderboards(db);
 
+  const hasData = sections.some(s => s.match.length > 0 || s.career.length > 0) || quarterBoards.length > 0;
+
   return (
     <div className="space-y-8">
-      <LeaderboardSection sections={sections} />
-
-      {quarterBoards.length > 0 && <QuarterLeaderboards boards={quarterBoards} />}
-
-      {sections.every(s => s.match.length === 0 && s.career.length === 0) && (
+      {hasData ? (
+        <StatsView sections={sections} quarterBoards={quarterBoards} />
+      ) : (
         <div className="border border-dashed border-[var(--gold)]/30 bg-white/25 backdrop-blur-sm rounded p-12 text-center">
           <p className="text-[var(--text-muted)]">Play some matches to see leaderboards.</p>
           <Link href="/sessions/new" className="mt-3 inline-block text-sm text-[var(--gold)] hover:text-[var(--gold-hover)]">

@@ -26,7 +26,7 @@ export default function QuarterLeaderboards({ boards }: Props) {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-[var(--text)] font-[family-name:var(--font-display)] uppercase">Per Quarter Stats</h2>
-          <p className="text-sm text-[var(--text-muted)]">Career totals broken down by quarter — shows who performs best in each quarter.</p>
+          <p className="text-sm text-[var(--text-muted)]">Best single-quarter performances across all matches.</p>
         </div>
         <button
           onClick={() => setUniqueOnly(!uniqueOnly)}
@@ -51,19 +51,22 @@ export default function QuarterLeaderboards({ boards }: Props) {
               </div>
               <ul className="divide-y divide-[var(--border)]">
                 {entries.map((entry, index) => (
-                  <li key={entry.player_id} className="flex items-center justify-between gap-2 px-4 py-3">
+                  <li key={`${entry.player_id}-${entry.label ?? index}`} className="flex items-center justify-between gap-2 px-4 py-3">
                     <div className="flex min-w-0 items-center gap-3">
                       <span className={`w-5 text-right text-sm font-bold tabular-nums ${
                         index === 0 ? 'text-[var(--gold)]' : index === 1 ? 'text-[var(--text-muted)]' : index === 2 ? 'text-[var(--gold-secondary)]' : 'text-[var(--text-dim)]'
                       }`}>
                         {index + 1}
                       </span>
-                      <Link
-                        href={`/players/${entry.player_id}`}
-                        className="truncate text-sm text-[var(--text)] transition-colors hover:text-[var(--gold)]"
-                      >
-                        {entry.name}
-                      </Link>
+                      <div className="min-w-0">
+                        <Link
+                          href={`/players/${entry.player_id}`}
+                          className="block truncate text-sm text-[var(--text)] transition-colors hover:text-[var(--gold)]"
+                        >
+                          {entry.name}
+                        </Link>
+                        {entry.label && <p className="truncate text-[11px] text-[var(--text-dim)]">{entry.label}</p>}
+                      </div>
                     </div>
                     <span className="text-sm font-bold text-[var(--text)] tabular-nums">
                       {board.format === 'percent' ? `${entry.value}%` : entry.value}

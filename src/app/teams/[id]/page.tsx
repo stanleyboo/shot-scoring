@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Breadcrumb from '@/components/Breadcrumb';
-import TeamLeaderboards from '@/components/TeamLeaderboards';
+import StatsView from '@/components/StatsView';
 import {
   getDb,
   getAllLeaderboards,
@@ -9,6 +9,7 @@ import {
   getAllSessions,
   getAllStatTypes,
   getMatchResults,
+  getQuarterLeaderboards,
   getTeamById,
   getTeamSummaries,
 } from '@/lib/db';
@@ -38,6 +39,7 @@ export default async function TeamPage({ params }: Props) {
   const sessions = getAllSessions(db, teamId);
   const results = getMatchResults(db, teamId);
   const leaderboards = getAllLeaderboards(db, teamId);
+  const quarterBoards = getQuarterLeaderboards(db, teamId);
   const statTypes = getAllStatTypes(db, true);
 
   return (
@@ -136,16 +138,12 @@ export default async function TeamPage({ params }: Props) {
         </div>
       </section>
 
-      <TeamLeaderboards leaderboards={leaderboards} />
-
-      {sessions.length > 0 && statTypes.length > 0 && (
-        <section className="space-y-2">
-          <h2 className="text-xl font-bold text-[var(--text)] font-[family-name:var(--font-display)] uppercase">Tracked Stats</h2>
-          <p className="text-sm text-[var(--text-muted)]">
-            Active stat types: {statTypes.map(statType => statType.name).join(', ')}
-          </p>
-        </section>
-      )}
+      <StatsView
+        sections={[{ title: team.name, ...leaderboards }]}
+        quarterBoards={quarterBoards}
+        heading="Team Leaderboards"
+        subtitle={`${team.name} records across all matches.`}
+      />
     </div>
   );
 }

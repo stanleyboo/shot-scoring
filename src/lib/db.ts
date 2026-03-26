@@ -1228,85 +1228,102 @@ export function getQuarterLeaderboards(
   db: Database.Database,
   teamId?: number
 ): Leaderboard[] {
+  const teamFilter = teamId ? ' AND s.team_id = @teamId' : '';
   const params = teamId ? { teamId } : {};
   const boards: Leaderboard[] = [];
 
-  for (const q of [1, 2, 3, 4]) {
-    const goals = db
-      .prepare(
-        `SELECT p.id AS player_id, p.name, COUNT(*) AS value
+// Only include sessions where quarters were actually tracked (shots in 2+ distinct quarters)
+const multiQShots = `AND sh.session_id IN (
+  SELECT session_id FROM shots GROUP BY session_id HAVING COUNT(DISTINCT quarter) >= 2
+)`;
+const multiQStats = `AND se.session_id IN (
+  SELECT session_id FROM shots GROUP BY session_id HAVING COUNT(DISTINCT quarter) >= 2
+)`;
+
+  // Best single-quarter goals (per match per quarter)
+  const goals = db
+    .prepare(
+      `SELECT player_id, name, value, 'Q' || quarter AS label FROM (
+         SELECT p.id AS player_id, p.name, sh.quarter, COUNT(*) AS value
          FROM shots sh
          JOIN players p ON p.id = sh.player_id
          JOIN sessions s ON s.id = sh.session_id
-         WHERE sh.scored = 1 AND sh.quarter = @quarter AND s.deleted_at IS NULL${teamId ? ' AND s.team_id = @teamId' : ''}
-         GROUP BY p.id
-         ORDER BY value DESC
-         LIMIT 5`
-      )
-      .all({ ...params, quarter: q }) as LeaderboardEntry[];
-    if (goals.length > 0) {
-      boards.push({ title: `Most Goals Q${q}`, subtitle: `Total goals scored in quarter ${q}`, entries: goals });
-    }
+         WHERE sh.scored = 1 AND s.deleted_at IS NULL${teamFilter} ${multiQShots}
+         GROUP BY p.id, sh.session_id, sh.quarter
+       ) sub
+       ORDER BY value DESC
+       LIMIT 10`
+    )
+    .all(params) as (LeaderboardEntry & { label: string })[];
+  if (goals.length > 0) {
+    boards.push({ title: 'Most Goals (Quarter)', subtitle: 'Best single-quarter goal tally in one match', entries: goals });
+  }
 
-    const pctBoard = db
-      .prepare(
-        `SELECT p.id AS player_id, p.name,
+  // Best single-quarter shot % (per match per quarter, min 7 attempts)
+  const pct = db
+    .prepare(
+      `SELECT player_id, name, value, 'Q' || quarter AS label FROM (
+         SELECT p.id AS player_id, p.name, sh.quarter,
            ROUND(SUM(CASE WHEN sh.scored = 1 THEN 1.0 ELSE 0 END) / COUNT(*) * 100) AS value
          FROM shots sh
          JOIN players p ON p.id = sh.player_id
          JOIN sessions s ON s.id = sh.session_id
-         WHERE sh.quarter = @quarter AND s.deleted_at IS NULL${teamId ? ' AND s.team_id = @teamId' : ''}
-         GROUP BY p.id
-         HAVING COUNT(*) >= 5
+         WHERE s.deleted_at IS NULL${teamFilter} ${multiQShots}
+         GROUP BY p.id, sh.session_id, sh.quarter
+         HAVING COUNT(*) >= 7
+       ) sub
+       ORDER BY value DESC
+       LIMIT 10`
+    )
+    .all(params) as (LeaderboardEntry & { label: string })[];
+  if (pct.length > 0) {
+    boards.push({ title: 'Best Shot % (Quarter)', subtitle: 'Best single-quarter accuracy (min. 7 attempts)', format: 'percent', entries: pct });
+  }
+
+  // Best single-quarter for each stat type
+  const statTypes = getAllStatTypes(db, true);
+  for (const st of statTypes) {
+    const statBoard = db
+      .prepare(
+        `SELECT player_id, name, value, 'Q' || quarter AS label FROM (
+           SELECT p.id AS player_id, p.name, se.quarter, COUNT(*) AS value
+           FROM stat_events se
+           JOIN players p ON p.id = se.player_id
+           JOIN sessions s ON s.id = se.session_id
+           WHERE se.stat_type_id = @statTypeId AND s.deleted_at IS NULL${teamFilter} ${multiQStats}
+           GROUP BY p.id, se.session_id, se.quarter
+         ) sub
          ORDER BY value DESC
-         LIMIT 5`
+         LIMIT 10`
       )
-      .all({ ...params, quarter: q }) as LeaderboardEntry[];
-    if (pctBoard.length > 0) {
-      boards.push({ title: `Best Shot % Q${q}`, subtitle: `Min. 5 attempts in quarter ${q}`, format: 'percent', entries: pctBoard });
+      .all({ ...params, statTypeId: st.id }) as (LeaderboardEntry & { label: string })[];
+    if (statBoard.length > 0) {
+      boards.push({ title: `${st.name} (Quarter)`, subtitle: `Most ${st.name.toLowerCase()} in one quarter of one match`, entries: statBoard });
     }
+  }
 
-    // Stat types per quarter
-    const statTypes = getAllStatTypes(db, true);
-    for (const st of statTypes) {
-      const statBoard = db
-        .prepare(
-          `SELECT p.id AS player_id, p.name, COUNT(*) AS value
+  // Combined interceptions — best single quarter
+  const interceptTypes = db.prepare(
+    "SELECT id FROM stat_types WHERE enabled = 1 AND name LIKE 'Interception%'"
+  ).all() as { id: number }[];
+  if (interceptTypes.length > 1) {
+    const ids = interceptTypes.map(t => t.id).join(',');
+    const combined = db
+      .prepare(
+        `SELECT player_id, name, value, 'Q' || quarter AS label FROM (
+           SELECT p.id AS player_id, p.name, se.quarter, COUNT(*) AS value
            FROM stat_events se
            JOIN players p ON p.id = se.player_id
            JOIN sessions s ON s.id = se.session_id
-           WHERE se.stat_type_id = @statTypeId AND se.quarter = @quarter AND s.deleted_at IS NULL${teamId ? ' AND s.team_id = @teamId' : ''}
-           GROUP BY p.id
-           ORDER BY value DESC
-           LIMIT 5`
-        )
-        .all({ ...params, statTypeId: st.id, quarter: q }) as LeaderboardEntry[];
-      if (statBoard.length > 0) {
-        boards.push({ title: `${st.name} Q${q}`, subtitle: `Total in quarter ${q}`, entries: statBoard });
-      }
-    }
-
-    // Combined interceptions per quarter
-    const interceptTypes = db.prepare(
-      "SELECT id FROM stat_types WHERE enabled = 1 AND name LIKE 'Interception%'"
-    ).all() as { id: number }[];
-    if (interceptTypes.length > 1) {
-      const ids = interceptTypes.map(t => t.id).join(',');
-      const combined = db
-        .prepare(
-          `SELECT p.id AS player_id, p.name, COUNT(*) AS value
-           FROM stat_events se
-           JOIN players p ON p.id = se.player_id
-           JOIN sessions s ON s.id = se.session_id
-           WHERE se.stat_type_id IN (${ids}) AND se.quarter = @quarter AND s.deleted_at IS NULL${teamId ? ' AND s.team_id = @teamId' : ''}
-           GROUP BY p.id
-           ORDER BY value DESC
-           LIMIT 5`
-        )
-        .all({ ...params, quarter: q }) as LeaderboardEntry[];
-      if (combined.length > 0) {
-        boards.push({ title: `Interceptions (Total) Q${q}`, subtitle: `All interception types in quarter ${q}`, entries: combined });
-      }
+           WHERE se.stat_type_id IN (${ids}) AND s.deleted_at IS NULL${teamFilter} ${multiQStats}
+           GROUP BY p.id, se.session_id, se.quarter
+         ) sub
+         ORDER BY value DESC
+         LIMIT 10`
+      )
+      .all(params) as (LeaderboardEntry & { label: string })[];
+    if (combined.length > 0) {
+      boards.push({ title: 'Interceptions Total (Quarter)', subtitle: 'Most interceptions (all types) in one quarter of one match', entries: combined });
     }
   }
 
