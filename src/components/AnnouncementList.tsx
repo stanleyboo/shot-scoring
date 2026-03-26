@@ -1,8 +1,8 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { removeAnnouncement } from '@/actions/announcements';
+import { removeAnnouncement, editAnnouncement } from '@/actions/announcements';
 import type { Announcement } from '@/lib/db';
 
 interface Props {
@@ -38,10 +38,119 @@ function formatTime(timeStr: string) {
   return `${display}:${m}${suffix}`;
 }
 
-function AnnouncementCard({ a, isAdmin, onDelete, isPending }: {
+function EditForm({ a, onCancel, onSaved }: {
+  a: Announcement;
+  onCancel: () => void;
+  onSaved: () => void;
+}) {
+  const [isPending, startTransition] = useTransition();
+  const [title, setTitle] = useState(a.title);
+  const [content, setContent] = useState(a.content);
+  const [type, setType] = useState(a.type);
+  const [eventDate, setEventDate] = useState(a.event_date ?? '');
+  const [eventTime, setEventTime] = useState(a.event_time ?? '');
+  const [location, setLocation] = useState(a.location ?? '');
+  const [opponent, setOpponent] = useState(a.opponent ?? '');
+  const [error, setError] = useState('');
+
+  const isEvent = type === 'match' || type === 'training' || type === 'social';
+  const config = TYPE_CONFIG[type] ?? TYPE_CONFIG.update;
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    startTransition(async () => {
+      const result = await editAnnouncement(a.id, {
+        title, content, type,
+        event_date: eventDate || null,
+        event_time: eventTime || null,
+        location: location || null,
+        opponent: opponent || null,
+      });
+      if (result.ok) {
+        onSaved();
+      } else {
+        setError(result.error ?? 'Failed to save');
+      }
+    });
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className={`border border-[var(--border)] border-l-4 ${config.border} bg-white/25 backdrop-blur-sm rounded p-4 space-y-3`}>
+      <div className="flex items-center justify-between">
+        <select
+          value={type}
+          onChange={e => setType(e.target.value as Announcement['type'])}
+          className="border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] rounded px-2 py-1 text-xs font-bold uppercase focus:outline-none focus:border-[var(--gold)] cursor-pointer"
+        >
+          <option value="match">Match</option>
+          <option value="training">Training</option>
+          <option value="social">Social</option>
+          <option value="update">Announcement</option>
+        </select>
+        <button type="button" onClick={onCancel} className="text-xs text-[var(--text-dim)] hover:text-[var(--text-muted)] transition">
+          Cancel
+        </button>
+      </div>
+
+      <input
+        type="text"
+        value={title}
+        onChange={e => setTitle(e.target.value)}
+        placeholder="Title"
+        maxLength={100}
+        className="w-full border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] rounded px-3 py-2 text-sm focus:outline-none focus:border-[var(--gold)]"
+      />
+
+      {type === 'match' && (
+        <input
+          type="text"
+          value={opponent}
+          onChange={e => setOpponent(e.target.value)}
+          placeholder="Opponent"
+          maxLength={100}
+          className="w-full border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] rounded px-3 py-2 text-sm focus:outline-none focus:border-[var(--gold)]"
+        />
+      )}
+
+      {isEvent && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <input type="date" value={eventDate} onChange={e => setEventDate(e.target.value)}
+            className="border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] rounded px-3 py-2 text-sm focus:outline-none focus:border-[var(--gold)]" />
+          <input type="time" value={eventTime} onChange={e => setEventTime(e.target.value)}
+            className="border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] rounded px-3 py-2 text-sm focus:outline-none focus:border-[var(--gold)]" />
+          <input type="text" value={location} onChange={e => setLocation(e.target.value)} placeholder="Location" maxLength={100}
+            className="border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] rounded px-3 py-2 text-sm focus:outline-none focus:border-[var(--gold)] col-span-2 sm:col-span-1" />
+        </div>
+      )}
+
+      <textarea
+        value={content}
+        onChange={e => setContent(e.target.value)}
+        placeholder="Details..."
+        maxLength={1000}
+        rows={3}
+        className="w-full border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] rounded px-3 py-2 text-sm focus:outline-none focus:border-[var(--gold)] resize-none"
+      />
+
+      {error && <p className="text-xs text-[var(--red)]">{error}</p>}
+
+      <button
+        type="submit"
+        disabled={isPending}
+        className="bg-[var(--gold)] text-[var(--bg)] font-bold text-sm uppercase tracking-wide rounded px-4 py-2 hover:bg-[var(--gold-hover)] transition disabled:opacity-50"
+      >
+        Save
+      </button>
+    </form>
+  );
+}
+
+function AnnouncementCard({ a, isAdmin, onDelete, onEdit, isPending }: {
   a: Announcement;
   isAdmin: boolean;
   onDelete: (id: number) => void;
+  onEdit: (id: number) => void;
   isPending: boolean;
 }) {
   const config = TYPE_CONFIG[a.type] ?? TYPE_CONFIG.update;
@@ -53,7 +162,6 @@ function AnnouncementCard({ a, isAdmin, onDelete, isPending }: {
         <div className="min-w-0 flex-1">
           <h3 className="font-bold text-[var(--text)] font-[family-name:var(--font-display)] uppercase">{a.title}</h3>
 
-          {/* Event details row */}
           {(a.event_date || a.event_time || a.location || a.opponent) && (
             <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-xs text-[var(--text-muted)]">
               {a.event_date && (
@@ -88,14 +196,24 @@ function AnnouncementCard({ a, isAdmin, onDelete, isPending }: {
           )}
         </div>
         {isAdmin && (
-          <button
-            onClick={() => onDelete(a.id)}
-            disabled={isPending}
-            className="text-[var(--text-dim)] hover:text-[var(--red)] transition text-xs flex-shrink-0"
-            title="Delete"
-          >
-            ✕
-          </button>
+          <div className="flex flex-col gap-1 flex-shrink-0">
+            <button
+              onClick={() => onEdit(a.id)}
+              disabled={isPending}
+              className="text-[var(--text-dim)] hover:text-[var(--gold)] transition text-xs"
+              title="Edit"
+            >
+              ✎
+            </button>
+            <button
+              onClick={() => onDelete(a.id)}
+              disabled={isPending}
+              className="text-[var(--text-dim)] hover:text-[var(--red)] transition text-xs"
+              title="Delete"
+            >
+              ✕
+            </button>
+          </div>
         )}
       </div>
     </div>
@@ -105,6 +223,7 @@ function AnnouncementCard({ a, isAdmin, onDelete, isPending }: {
 export default function AnnouncementList({ announcements, isAdmin }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   function handleDelete(id: number) {
     if (!confirm('Delete this announcement?')) return;
@@ -112,6 +231,11 @@ export default function AnnouncementList({ announcements, isAdmin }: Props) {
       await removeAnnouncement(id);
       router.refresh();
     });
+  }
+
+  function handleSaved() {
+    setEditingId(null);
+    router.refresh();
   }
 
   if (announcements.length === 0) {
@@ -122,7 +246,6 @@ export default function AnnouncementList({ announcements, isAdmin }: Props) {
     );
   }
 
-  // Group by type, ordering: matches first, then training, then updates
   const typeOrder: string[] = ['match', 'training', 'social', 'update'];
   const grouped = typeOrder
     .map(type => ({
@@ -142,9 +265,13 @@ export default function AnnouncementList({ announcements, isAdmin }: Props) {
             <span className="text-xs font-normal text-[var(--text-dim)] lowercase">({group.items.length})</span>
           </h2>
           <div className="space-y-2">
-            {group.items.map(a => (
-              <AnnouncementCard key={a.id} a={a} isAdmin={isAdmin} onDelete={handleDelete} isPending={isPending} />
-            ))}
+            {group.items.map(a =>
+              editingId === a.id ? (
+                <EditForm key={a.id} a={a} onCancel={() => setEditingId(null)} onSaved={handleSaved} />
+              ) : (
+                <AnnouncementCard key={a.id} a={a} isAdmin={isAdmin} onDelete={handleDelete} onEdit={setEditingId} isPending={isPending} />
+              )
+            )}
           </div>
         </section>
       ))}
