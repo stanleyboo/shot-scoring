@@ -1589,6 +1589,19 @@ export function getAnnouncements(db: Database.Database): Announcement[] {
   `).all() as Announcement[];
 }
 
+export function getUpcomingAnnouncements(db: Database.Database, limit = 5): Announcement[] {
+  return db.prepare(`
+    SELECT * FROM announcements
+    WHERE (event_date IS NOT NULL AND event_date >= date('now'))
+       OR (event_date IS NULL AND created_at >= datetime('now', '-7 days'))
+    ORDER BY
+      CASE WHEN event_date IS NOT NULL THEN 0 ELSE 1 END,
+      event_date ASC,
+      created_at DESC
+    LIMIT ?
+  `).all(limit) as Announcement[];
+}
+
 export function createAnnouncement(
   db: Database.Database,
   data: { title: string; content: string; type: string; event_date: string | null; event_time: string | null; location: string | null; opponent: string | null }

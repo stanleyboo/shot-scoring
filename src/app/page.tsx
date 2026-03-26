@@ -5,8 +5,10 @@ import {
   getActiveSession,
   getMatchResults,
   getSetting,
+  getUpcomingAnnouncements,
 } from '@/lib/db';
-import { canCreate, canEdit } from '@/lib/auth';
+import { canCreate, canEdit, getSettings, canViewPage } from '@/lib/auth';
+import UpcomingEvents from '@/components/UpcomingEvents';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,8 +22,11 @@ export default async function HomePage() {
   }
 
   const creator = await canCreate();
+  const settings = getSettings();
   const clubName = getSetting(db, 'club_name') ?? 'Langwith Netball';
   const results = getMatchResults(db);
+  const showCalendar = await canViewPage(settings.page_updates);
+  const upcoming = showCalendar ? getUpcomingAnnouncements(db) : [];
 
   return (
     <div className="space-y-6">
@@ -41,6 +46,8 @@ export default async function HomePage() {
           )}
         </div>
       </section>
+
+      {upcoming.length > 0 && <UpcomingEvents events={upcoming} />}
 
       {results.length === 0 ? (
         <div className="border border-dashed border-[var(--gold)]/30 bg-white/25 backdrop-blur-sm rounded p-12 text-center space-y-4">
