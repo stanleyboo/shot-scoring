@@ -43,6 +43,8 @@ export async function isAdmin(): Promise<boolean> {
 export interface AppSettings {
   public_can_create: boolean;
   public_can_edit: boolean;
+  feature_social: boolean;
+  feature_updates: boolean;
 }
 
 export function getSettings(): AppSettings {
@@ -52,6 +54,8 @@ export function getSettings(): AppSettings {
   return {
     public_can_create: map.public_can_create === '1',
     public_can_edit: map.public_can_edit === '1',
+    feature_social: map.feature_social === '1',
+    feature_updates: map.feature_updates === '1',
   };
 }
 

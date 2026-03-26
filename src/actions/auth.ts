@@ -40,7 +40,7 @@ export async function logout(): Promise<void> {
 
 export async function updateAdminSetting(key: string, value: boolean): Promise<void> {
   if (!(await isAdmin())) throw new Error('Unauthorized');
-  if (!['public_can_create', 'public_can_edit'].includes(key)) {
+  if (!['public_can_create', 'public_can_edit', 'feature_social', 'feature_updates'].includes(key)) {
     throw new Error('Invalid setting');
   }
   updateSetting(key, value);

@@ -290,6 +290,32 @@ export function applySchema(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_stat_events_session_player ON stat_events(session_id, player_id);
   `);
 
+  // Messages table (social/chat)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS messages (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      author     TEXT NOT NULL,
+      content    TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+  `);
+
+  // Announcements table (updates, fixtures, training)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS announcements (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      title      TEXT NOT NULL,
+      content    TEXT NOT NULL,
+      type       TEXT NOT NULL DEFAULT 'update',
+      event_date TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+  `);
+
+  // Feature flag settings
+  db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('feature_social', '0')").run();
+  db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES ('feature_updates', '0')").run();
+
   const seedTypes = ['Interceptions', 'Assists', 'Turnovers', 'Feeds'];
   const insertType = db.prepare('INSERT OR IGNORE INTO stat_types (name) VALUES (?)');
   for (const name of seedTypes) insertType.run(name);
@@ -1482,4 +1508,73 @@ export function undoLastStatEvent(
     .get(sessionId, playerId, statTypeId) as { id: number } | undefined;
 
   if (last) db.prepare('DELETE FROM stat_events WHERE id = ?').run(last.id);
+}
+
+// --- Messages (Social) ---
+
+export interface Message {
+  id: number;
+  author: string;
+  content: string;
+  created_at: string;
+}
+
+export function getMessages(db: Database.Database, limit = 50, offset = 0): Message[] {
+  return db.prepare('SELECT * FROM messages ORDER BY created_at DESC LIMIT ? OFFSET ?').all(limit, offset) as Message[];
+}
+
+export function getMessageCount(db: Database.Database): number {
+  return (db.prepare('SELECT COUNT(*) AS count FROM messages').get() as { count: number }).count;
+}
+
+export function createMessage(db: Database.Database, author: string, content: string): Message {
+  const trimAuthor = author.trim();
+  const trimContent = content.trim();
+  if (!trimAuthor) throw new Error('Name is required');
+  if (!trimContent) throw new Error('Message is required');
+  if (trimContent.length > 500) throw new Error('Message too long');
+  return db.prepare('INSERT INTO messages (author, content) VALUES (?, ?) RETURNING *').get(trimAuthor, trimContent) as Message;
+}
+
+export function deleteMessage(db: Database.Database, id: number): void {
+  db.prepare('DELETE FROM messages WHERE id = ?').run(id);
+}
+
+// --- Announcements (Updates) ---
+
+export interface Announcement {
+  id: number;
+  title: string;
+  content: string;
+  type: 'update' | 'match' | 'training';
+  event_date: string | null;
+  created_at: string;
+}
+
+export function getAnnouncements(db: Database.Database): Announcement[] {
+  return db.prepare('SELECT * FROM announcements ORDER BY created_at DESC').all() as Announcement[];
+}
+
+export function getUpcomingAnnouncements(db: Database.Database): Announcement[] {
+  return db.prepare(
+    "SELECT * FROM announcements WHERE event_date IS NULL OR event_date >= date('now') ORDER BY CASE WHEN event_date IS NOT NULL THEN 0 ELSE 1 END, event_date ASC, created_at DESC"
+  ).all() as Announcement[];
+}
+
+export function createAnnouncement(db: Database.Database, title: string, content: string, type: string, eventDate: string | null): Announcement {
+  const trimTitle = title.trim();
+  const trimContent = content.trim();
+  if (!trimTitle) throw new Error('Title is required');
+  if (!trimContent) throw new Error('Content is required');
+  return db.prepare('INSERT INTO announcements (title, content, type, event_date) VALUES (?, ?, ?, ?) RETURNING *')
+    .get(trimTitle, trimContent, type, eventDate || null) as Announcement;
+}
+
+export function updateAnnouncement(db: Database.Database, id: number, title: string, content: string, type: string, eventDate: string | null): void {
+  db.prepare('UPDATE announcements SET title = ?, content = ?, type = ?, event_date = ? WHERE id = ?')
+    .run(title.trim(), content.trim(), type, eventDate || null, id);
+}
+
+export function deleteAnnouncement(db: Database.Database, id: number): void {
+  db.prepare('DELETE FROM announcements WHERE id = ?').run(id);
 }

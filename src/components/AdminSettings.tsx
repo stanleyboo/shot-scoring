@@ -66,6 +66,23 @@ export default function AdminSettings({ settings }: Props) {
         onChange={() => handleToggle('public_can_edit')}
         disabled={isPending}
       />
+
+      <h2 className="text-lg font-semibold text-[var(--text-muted)] font-[family-name:var(--font-display)] uppercase tracking-wide mt-6">Features</h2>
+      <p className="text-sm text-[var(--text-dim)]">Toggle sections on and off. Disabled features are hidden from everyone.</p>
+      <Toggle
+        label="Social / Chat"
+        description="Message board where players can post messages using their name."
+        checked={settings.feature_social}
+        onChange={() => handleToggle('feature_social')}
+        disabled={isPending}
+      />
+      <Toggle
+        label="Updates & Fixtures"
+        description="Announcements section for match fixtures, training sessions, and club updates."
+        checked={settings.feature_updates}
+        onChange={() => handleToggle('feature_updates')}
+        disabled={isPending}
+      />
     </div>
   );
 }

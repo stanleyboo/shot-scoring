@@ -5,18 +5,25 @@ import { usePathname } from 'next/navigation';
 
 interface Props {
   isAdmin: boolean;
+  features?: { social?: boolean; updates?: boolean };
 }
 
-const links = [
+const baseLinks = [
   { href: '/sessions', label: 'Matches' },
   { href: '/players', label: 'Players' },
   { href: '/teams', label: 'Teams' },
   { href: '/stats', label: 'Stats' },
-  { href: '/feedback', label: 'Feedback' },
 ];
 
-export default function NavLinks({ isAdmin }: Props) {
+export default function NavLinks({ isAdmin, features }: Props) {
   const pathname = usePathname();
+
+  const links = [
+    ...baseLinks,
+    ...(features?.social ? [{ href: '/social', label: 'Social' }] : []),
+    ...(features?.updates ? [{ href: '/updates', label: 'Updates' }] : []),
+    { href: '/feedback', label: 'Feedback' },
+  ];
 
   function isActive(href: string) {
     if (href === '/') return pathname === '/';
